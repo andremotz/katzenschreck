@@ -1,10 +1,10 @@
+image: python:3.10
 stages:       
   - build
 
 
 build-job:       # This job runs in the build stage, which runs first.
   stage: build
-  image: python:3.10
   script:
     - echo "Compiling the code..."
     - python --version  # Optional: Check Python version
