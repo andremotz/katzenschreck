@@ -1,7 +1,7 @@
 image: python:3.10
 
 before_script:
-  - python --version ; pip --version  # For debugging
+  - python3 --version ; pip3 --version  # For debugging
 
 
 stages:       
