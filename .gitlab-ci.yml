@@ -3,6 +3,9 @@
 # Docker-Build-Image für Raspberry Pi 4 (ARM-Architektur)
 image: docker:latest
 
+
+
+
 # Docker-In-Docker Service, um den Docker-Befehl auszuführen
 services:
   - docker:dind
@@ -15,6 +18,8 @@ variables:
 # Job zur Authentifizierung und zum Erstellen & Pushen des Docker-Images
 build_and_push:
   stage: build
+  tags:
+    - docker
   script:
     # Anmeldung bei der GitLab-Registry
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
