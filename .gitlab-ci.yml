@@ -3,9 +3,6 @@
 # Docker-Build-Image für Raspberry Pi 4 (ARM-Architektur)
 image: docker:latest
 
-
-
-
 # Docker-In-Docker Service, um den Docker-Befehl auszuführen
 services:
   - docker:dind
@@ -13,17 +10,15 @@ services:
 # Variablen für die Docker-Registry und das Image
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
+  GITLAB_REGISTRY: registry.gitlab.prometheus-it.art  # Manuell gesetzter Registry-Host
+  DOCKER_IMAGE: $GITLAB_REGISTRY/andre/animal_detector:latest
 
 # Job zur Authentifizierung und zum Erstellen & Pushen des Docker-Images
 build_and_push:
   stage: build
-  tags:
-    - docker
   script:
     # Anmeldung bei der GitLab-Registry
-    - echo registry $CI_REGISTRY
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin $GITLAB_REGISTRY
 
     # Build des Docker-Images für ARM (Raspberry Pi)
     - docker build -t $DOCKER_IMAGE --platform linux/arm/v7 .
