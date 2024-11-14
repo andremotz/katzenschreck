@@ -22,6 +22,7 @@ build_and_push:
     - docker
   script:
     # Anmeldung bei der GitLab-Registry
+    - echo registry $CI_REGISTRY
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
 
     # Build des Docker-Images für ARM (Raspberry Pi)
