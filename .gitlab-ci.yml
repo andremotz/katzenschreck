@@ -16,6 +16,8 @@ variables:
 # Job zur Authentifizierung und zum Erstellen & Pushen des Docker-Images
 build_and_push:
   stage: build
+  tags:
+    - docker
   script:
     # Anmeldung bei der GitLab-Registry
     - echo "$CI_JOB_TOKEN" | docker login -u "$CI_REGISTRY_USER" --password-stdin $GITLAB_REGISTRY
