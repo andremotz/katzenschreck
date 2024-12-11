@@ -23,7 +23,7 @@ source $VENV_DIR/bin/activate
 pip install -r ipcam-detector/requirements.txt
 
 # Führe das Python-Skript aus mit den globalen Variablen RTSP_STREAM_URL und OUTPUT_DIR
-echo $RTSP_STREAM_URL
+echo Stream: $RTSP_STREAM_URL
 python3 ipcam-detector/main.py $RTSP_STREAM_URL $OUTPUT_DIR
 
 
