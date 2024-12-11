@@ -7,16 +7,16 @@ import argparse
 # Argumente definieren
 parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
 parser.add_argument("rtsp_stream_url", type=str, help="Die URL des RTSP-Streams.")
-parser.add_argument("output_folder", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
+parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
 args = parser.parse_args()
 
 # RTSP-Stream-URL und Zielordner für die Frames aus den Argumenten
 rtsp_stream_url = args.rtsp_stream_url
-output_folder = args.output_folder
+output_dir = args.output_dir
 
 # Erstelle einen Ordner, um die Ergebnisse zu speichern, falls er nicht existiert
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
 # Lade das YOLO11-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
@@ -65,7 +65,7 @@ while True:
                     current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S')
 
                     # Speichere das Frame mit den erkannten Objekten
-                    output_file = f'{output_folder}/frame_{current_date_time}_{frame_count}.jpg'
+                    output_file = f'{output_dir}/frame_{current_date_time}_{frame_count}.jpg'
                     cv2.imwrite(output_file, annotated_frame)
                     frame_count += 1
 
@@ -80,4 +80,4 @@ while True:
         cap.release()
         # cv2.destroyAllWindows()
 
-print(f'Frames mit erkannten Objekten sind im Ordner "{output_folder}" gespeichert.')
+print(f'Frames mit erkannten Objekten sind im Ordner "{output_dir}" gespeichert.')

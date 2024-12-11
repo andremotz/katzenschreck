@@ -23,7 +23,7 @@ source $VENV_DIR/bin/activate
 pip install -r ipcam-detector/requirements.txt
 
 # Führe das Python-Skript aus
-python3 ipcam-detector/main.py
+python3 ipcam-detector/main.py $RTSP_STREAM_URL $OUTPUT_DIR
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate
