@@ -15,7 +15,6 @@ rtsp_stream_url = args.rtsp_stream_url
 output_folder = args.output_folder
 
 # Erstelle einen Ordner, um die Ergebnisse zu speichern, falls er nicht existiert
-
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
@@ -62,8 +61,11 @@ while True:
                     # Zeichne die erkannten Objekte auf dem Frame
                     annotated_frame = result.plot()
 
+                    # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS'
+                    current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S')
+
                     # Speichere das Frame mit den erkannten Objekten
-                    output_file = f'{output_folder}/frame_{frame_count}.jpg'
+                    output_file = f'{output_folder}/frame_{current_date_time}_{frame_count}.jpg'
                     cv2.imwrite(output_file, annotated_frame)
                     frame_count += 1
 
