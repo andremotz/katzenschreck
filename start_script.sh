@@ -20,10 +20,10 @@ fi
 source $VENV_DIR/bin/activate
 
 # Installiere requirements.txt Abhängigkeiten
-pip install -r requirements.txt
+pip install -r ipcam-detector/requirements.txt
 
 # Führe das Python-Skript aus
-python3 main.py
+python3 ipcam-detector/main.py
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate
