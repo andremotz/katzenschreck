@@ -11,6 +11,11 @@ cd $REPO_DIR
 # Hole die neuesten Änderungen
 git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
 
+# add a check for source if it exists, if not create it
+if [ ! -d "$VENV_DIR" ]; then
+    python3 -m venv $VENV_DIR
+fi
+
 # Aktiviere die virtuelle Umgebung
 source $VENV_DIR/bin/activate
 
