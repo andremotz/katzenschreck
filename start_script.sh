@@ -1,16 +1,15 @@
 #!/bin/bash
 
-REPO_DIR="~/test-ai/"
+REPO_DIR="/home/pi/test-ai/"
 
 # Verzeichnis der virtuellen Umgebung
-VENV_DIR="~/test-ai/venv"
+VENV_DIR="/home/pi/test-ai/venv"
 
 # Wechsle in das Verzeichnis des Repositories
 cd $REPO_DIR
 
-
 # Hole die neuesten Änderungen
-git pull origin main
+git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
 
 # Aktiviere die virtuelle Umgebung
 source $VENV_DIR/bin/activate
