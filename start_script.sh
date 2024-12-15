@@ -17,6 +17,9 @@ else
     exit 1
 fi
 
+# Verzeichnis des Repositories, was dasselbe ist, wie das Verzeichnis dieses Skripts + /ipcam-detector
+REPO_DIR=$(pwd)/ipcam-detector
+
 # Verzeichnis der virtuellen Umgebung
 # VENV_DIR basierend auf REPO_DIR setzen
 VENV_DIR="${REPO_DIR}/venv"
@@ -37,7 +40,7 @@ source $VENV_DIR/bin/activate
 pip install -r ipcam-detector/requirements.txt
 
 # Führe das Python-Skript aus mit den globalen Variablen RTSP_STREAM_URL und OUTPUT_DIR
-python3 ipcam-detector/main.py $RTSP_STREAM_URL $OUTPUT_DIR
+python3 ipcam-detector/main.py $RTSP_STREAM_URL $REPO_DIR/results
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate
