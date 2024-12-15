@@ -38,10 +38,10 @@ fi
 source $VENV_DIR/bin/activate
 
 # Installiere requirements.txt Abhängigkeiten
-pip install -r ipcam-detector/requirements.txt
+pip install -r requirements.txt
 
 # Führe das Python-Skript aus mit den globalen Variablen RTSP_STREAM_URL und OUTPUT_DIR
-python3 ipcam-detector/main.py $RTSP_STREAM_URL $REPO_DIR/results
+python3 main.py $RTSP_STREAM_URL $REPO_DIR/results
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate
