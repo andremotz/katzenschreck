@@ -58,16 +58,18 @@ while True:
             for box in result.boxes:
                 # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                 if box.cls == 0 or box.cls == 15:
-                    # Zeichne die erkannten Objekte auf dem Frame
-                    annotated_frame = result.plot()
+                    # mache nur weiter, wenn die accuracy über 50% ist
+                    if box.conf > 0.5:
+                        # Zeichne die erkannten Objekte auf dem Frame
+                        annotated_frame = result.plot()
 
-                    # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS'
-                    current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S')
+                        # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS'
+                        current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S')
 
-                    # Speichere das Frame mit den erkannten Objekten
-                    output_file = f'{output_dir}/frame_{current_date_time}_{frame_count}.jpg'
-                    cv2.imwrite(output_file, annotated_frame)
-                    frame_count += 1
+                        # Speichere das Frame mit den erkannten Objekten
+                        output_file = f'{output_dir}/frame_{current_date_time}_{frame_count}.jpg'
+                        cv2.imwrite(output_file, annotated_frame)
+                        frame_count += 1
 
         # Zeige den Stream in einem Fenster an
         # cv2.imshow('Live Camera Detection', annotated_frame)
