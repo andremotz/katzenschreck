@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Hole die neuesten Änderungen
+git config --global credential.helper store
 git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
 
 # Entferne die config.txt aus dem Index
