@@ -1,0 +1,4 @@
+RTSP_STREAM_URL=rtsp://your.url/mystream
+
+OUTPUT_DIR=/home/path_where/images/are_saved
+REPO_DIR="/home/pi/test-ai"
