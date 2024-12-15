@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Hole die neuesten Änderungen
+git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
+
+# Entferne die config.txt aus dem Index
+git rm --cached config.txt
+
 # Konfigurationsdatei einlesen
 CONFIG_FILE="config.txt"
 
@@ -18,11 +24,6 @@ VENV_DIR="${REPO_DIR}/venv"
 # Wechsle in das Verzeichnis des Repositories
 cd $REPO_DIR
 
-# Hole die neuesten Änderungen
-git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
-
-# Entferne die config.txt aus dem Index
-git rm --cached config.txt
 
 # add a check for source if it exists, if not create it
 if [ ! -d "$VENV_DIR" ]; then
