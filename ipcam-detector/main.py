@@ -50,8 +50,6 @@ if not os.path.exists(output_dir):
 
 # MQTT Broker konfigurieren
 mqtt_broker = mqtt.Client()
-mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
-mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
 # Lade das YOLO-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
@@ -85,8 +83,11 @@ while True:
         # Filtere nur die Erkennung von Menschen (Klasse 0) und Katzen (Klasse 15)
         for result in results:
             for box in result.boxes:
+                # Extract the class ID from the tensor
+                class_id = int(box.cls.item())
+                
                 # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
-                if box.cls == 0 or box.cls == 15:
+                if class_id == 0 or class_id == 15:
                     # mache nur weiter, wenn die accuracy über 50% ist
                     if box.conf > 0.5:
                         # Zeichne die erkannten Objekte auf dem Frame
@@ -102,7 +103,7 @@ while True:
                         # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                         class_names = {0: 'Person', 15: 'Cat'}
 
-                         # Print the class ID to the terminal
+                        # Print the class ID to the terminal
                         detected_class_id = int(box.cls.item())
                         detected_class_name = class_names.get(detected_class_id, "Unknown")
                         detected_class_confidence = box.conf.item()
@@ -110,8 +111,16 @@ while True:
                         print(f'Detected class name: {detected_class_name}')
                         print(f'Detected class confidence: {detected_class_confidence}')
 
-                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten box.cls und current_date_time im json Format
+                        # Open MQTT connection
+                        mqtt_broker = mqtt.Client()
+                        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
+                        mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
+
+                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
                         mqtt_broker.publish(mqtt_topic, f'{{"time": "{current_date_time}", "class": "{detected_class_name}", "confidence": "{detected_class_confidence}"}}')
+
+                        # Close MQTT connection
+                        mqtt_broker.disconnect()
 
         # Zeige den Stream in einem Fenster an
         # cv2.imshow('Live Camera Detection', annotated_frame)
