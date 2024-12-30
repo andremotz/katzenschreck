@@ -10,8 +10,9 @@ def read_config(file_path):
     config = {}
     with open(file_path, 'r') as file:
         for line in file:
-            key, value = line.split('=')
-            config[key.strip()] = value.strip()
+            if '=' in line:
+                key, value = line.split('=', 1)
+                config[key.strip()] = value.strip()
     return config
 
 # Argumente definieren
