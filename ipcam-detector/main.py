@@ -20,7 +20,7 @@ parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannt
 args = parser.parse_args()
 
 # Konfigurationswerte aus [config.txt](http://_vscodecontentref_/3) lesen
-config_file_path = 'config.txt'
+config_file_path = '../config.txt'
 config = read_config(config_file_path)
 rtsp_stream_url = config.get('rtsp_stream_url')
 mqtt_broker_url = config.get('mqtt_broker_url')
