@@ -1,7 +1,0 @@
-rtsp_stream_url=rtsp://admin:Admin123Admin123@ipcam-terrasse:554/11
-
-mqtt_broker_url=10.4.0.5
-mqtt_broker_port=1883
-mqtt_topic=object_detection
-mqtt_username=mqtt-user
-mqtt_password=Ewrf43reg
