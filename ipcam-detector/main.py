@@ -50,6 +50,7 @@ if not os.path.exists(output_dir):
 
 # MQTT Broker konfigurieren
 mqtt_broker = mqtt.Client()
+mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
 
 # Lade das YOLO-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
@@ -90,15 +91,12 @@ while True:
                 if class_id == 0 or class_id == 15:
                     # mache nur weiter, wenn die accuracy über 50% ist
                     if box.conf > 0.5:
-                        # Zeichne die erkannten Objekte auf dem Frame
-                        annotated_frame = result.plot()
-
                         # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS-MS'
                         current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
 
                         # Speichere das Frame mit den erkannten Objekten
                         output_file = f'{output_dir}/frame_{current_date_time}.jpg'
-                        cv2.imwrite(output_file, annotated_frame)
+                        cv2.imwrite(output_file, result.plot())
 
                         # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                         class_names = {0: 'Person', 15: 'Cat'}
@@ -112,8 +110,6 @@ while True:
                         print(f'Detected class confidence: {detected_class_confidence}')
 
                         # Open MQTT connection
-                        mqtt_broker = mqtt.Client()
-                        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
                         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
                         # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
@@ -122,15 +118,7 @@ while True:
                         # Close MQTT connection
                         mqtt_broker.disconnect()
 
-        # Zeige den Stream in einem Fenster an
-        # cv2.imshow('Live Camera Detection', annotated_frame)
-
-        # Drücke 'q', um den Stream zu beenden
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
         # Kamera- und Fenster-Ressourcen freigeben
         cap.release()
-        # cv2.destroyAllWindows()
 
 print(f'Frames mit erkannten Objekten sind im Ordner "{output_dir}" gespeichert.')
