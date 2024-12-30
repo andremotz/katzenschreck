@@ -56,8 +56,6 @@ mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 # Lade das YOLO-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
 
-frame_count = 0
-
 # Verarbeite den Kamera-Stream in Echtzeit
 while True:
     cap = cv2.VideoCapture(rtsp_stream_url)
@@ -94,20 +92,26 @@ while True:
                         # Zeichne die erkannten Objekte auf dem Frame
                         annotated_frame = result.plot()
 
-                        # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS'
-                        current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S')
+                        # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS-MS'
+                        current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
 
                         # Speichere das Frame mit den erkannten Objekten
-                        output_file = f'{output_dir}/frame_{current_date_time}_{frame_count}.jpg'
+                        output_file = f'{output_dir}/frame_{current_date_time}.jpg'
                         cv2.imwrite(output_file, annotated_frame)
-                        frame_count += 1
 
                         # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                         class_names = {0: 'Person', 15: 'Cat'}
 
+                         # Print the class ID to the terminal
+                        detected_class_id = int(box.cls.item())
+                        detected_class_name = class_names.get(detected_class_id, "Unknown")
+                        detected_class_confidence = box.conf.item()
+                        print(f'Detected class ID: {detected_class_id}')
+                        print(f'Detected class name: {detected_class_name}')
+                        print(f'Detected class confidence: {detected_class_confidence}')
+
                         # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten box.cls und current_date_time im json Format
-                        mqtt_broker.publish(mqtt_topic, f'{{"cls": "{class_names.get(box.cls, "Unknown")}", "time": "{current_date_time}"}}')
-                        #mqtt_broker.publish(mqtt_topic, f'{{"cls": "{box.cls}", "time": "{current_date_time}"}}')
+                        mqtt_broker.publish(mqtt_topic, f'{{"time": "{current_date_time}", "class": "{detected_class_name}", "confidence": "{detected_class_confidence}"}}')
 
         # Zeige den Stream in einem Fenster an
         # cv2.imshow('Live Camera Detection', annotated_frame)

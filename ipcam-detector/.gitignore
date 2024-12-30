@@ -1,3 +1,4 @@
 yolo*.pt
 .venv
 .idea
+config.txt
