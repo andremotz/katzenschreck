@@ -7,17 +7,6 @@ git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
 # Entferne die config.txt aus dem Index
 git rm --cached config.txt
 
-# Konfigurationsdatei einlesen
-CONFIG_FILE="config.txt"
-
-if [ -f "$CONFIG_FILE" ]; then
-    # Datei einlesen und Variablen exportieren
-    source "$CONFIG_FILE"
-else
-    echo "Config file $CONFIG_FILE not found!"
-    exit 1
-fi
-
 # Verzeichnis des Repositories, was dasselbe ist, wie das Verzeichnis dieses Skripts + /ipcam-detector
 REPO_DIR=$(pwd)/ipcam-detector
 
@@ -27,7 +16,6 @@ VENV_DIR="${REPO_DIR}/venv"
 
 # Wechsle in das Verzeichnis des Repositories
 cd $REPO_DIR
-
 
 # add a check for source if it exists, if not create it
 if [ ! -d "$VENV_DIR" ]; then
@@ -41,7 +29,7 @@ source $VENV_DIR/bin/activate
 pip install -r requirements.txt
 
 # Führe das Python-Skript aus mit den globalen Variablen RTSP_STREAM_URL und OUTPUT_DIR
-python3 main.py $RTSP_STREAM_URL $REPO_DIR/results $MQTT_URL $MQTT_TOPIC
+python3 main.py $REPO_DIR/results
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate

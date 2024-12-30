@@ -5,19 +5,43 @@ from ultralytics import YOLO
 import argparse
 import paho.mqtt.client as mqtt
 
+# Function to read the configuration from [config.txt](http://_vscodecontentref_/2)
+def read_config(file_path):
+    config = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            key, value = line.split('=')
+            config[key.strip()] = value.strip()
+    return config
+
 # Argumente definieren
 parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
-parser.add_argument("rtsp_stream_url", type=str, help="Die URL des RTSP-Streams.")
 parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
-parser.add_argument("mqtt_broker_url", type=str, help="Der MQTT Broker, der die erkannten Objekte empfängt.")
-parser.add_argument("mqtt_topic", type=str, help="Der MQTT Topic, der die erkannten Objekte empfängt.")
 args = parser.parse_args()
 
-# RTSP-Stream-URL und Zielordner für die Frames aus den Argumenten
-rtsp_stream_url = args.rtsp_stream_url
+# Konfigurationswerte aus [config.txt](http://_vscodecontentref_/3) lesen
+config_file_path = 'config.txt'
+config = read_config(config_file_path)
+rtsp_stream_url = config.get('rtsp_stream_url')
+mqtt_broker_url = config.get('mqtt_broker_url')
+mqtt_broker_port = int(config.get('mqtt_broker_port', 1883))  # Default to 1883 if not specified
+mqtt_topic = config.get('mqtt_topic')
+mqtt_username = config.get('mqtt_username')
+mqtt_password = config.get('mqtt_password')
+
+if not rtsp_stream_url:
+    raise ValueError("RTSP stream URL not found in config.txt")
+if not mqtt_broker_url:
+    raise ValueError("MQTT broker URL not found in config.txt")
+if not mqtt_topic:
+    raise ValueError("MQTT topic not found in config.txt")
+if not mqtt_username:
+    raise ValueError("MQTT username not found in config.txt")
+if not mqtt_password:
+    raise ValueError("MQTT password not found in config.txt")
+
+# Zielordner für die Frames aus den Argumenten
 output_dir = args.output_dir
-mqtt_broker_url = args.mqtt_broker_url
-mqtt_topic = args.mqtt_topic
 
 # Erstelle einen Ordner, um die Ergebnisse zu speichern, falls er nicht existiert
 if not os.path.exists(output_dir):
@@ -25,18 +49,15 @@ if not os.path.exists(output_dir):
 
 # MQTT Broker konfigurieren
 mqtt_broker = mqtt.Client()
-mqtt_broker.connect(mqtt_broker_url, 1883, 60)
+mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
+mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
-# Lade das YOLO11-Modell
+# Lade das YOLO-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
-
-# Zugriff auf die MacBook-Kamera (Kamera-ID 0 ist normalerweise die interne Kamera)
-# cap = cv2.VideoCapture(0)
 
 frame_count = 0
 
 # Verarbeite den Kamera-Stream in Echtzeit
-#while cap.isOpened():
 while True:
     cap = cv2.VideoCapture(rtsp_stream_url)
 

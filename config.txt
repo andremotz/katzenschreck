@@ -1,3 +1,7 @@
-RTSP_STREAM_URL=rtsp://your.url/mystream
-MQTT_URL=yourmqttbroker
-MQTT_TOPIC=yourmqtttopic
+rtsp_stream_url=rtsp://your.url/mystream
+
+mqtt_broker_url=yourmqttbroker
+mqtt_broker_port=1883
+mqtt_topic=yourmqtttopic
+mqtt_username=username
+mqtt_password=password
