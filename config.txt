@@ -1,1 +1,3 @@
 RTSP_STREAM_URL=rtsp://your.url/mystream
+MQTT_URL=yourmqttbroker
+MQTT_TOPIC=yourmqtttopic

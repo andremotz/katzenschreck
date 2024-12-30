@@ -41,7 +41,7 @@ source $VENV_DIR/bin/activate
 pip install -r requirements.txt
 
 # Führe das Python-Skript aus mit den globalen Variablen RTSP_STREAM_URL und OUTPUT_DIR
-python3 main.py $RTSP_STREAM_URL $REPO_DIR/results
+python3 main.py $RTSP_STREAM_URL $REPO_DIR/results $MQTT_URL $MQTT_TOPIC
 
 # Deaktiviere die virtuelle Umgebung (optional, wenn der Prozess endet)
 deactivate

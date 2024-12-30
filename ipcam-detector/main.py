@@ -3,20 +3,29 @@ import os
 import time
 from ultralytics import YOLO
 import argparse
+import paho.mqtt.client as mqtt
 
 # Argumente definieren
 parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
 parser.add_argument("rtsp_stream_url", type=str, help="Die URL des RTSP-Streams.")
 parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
+parser.add_argument("mqtt_broker_url", type=str, help="Der MQTT Broker, der die erkannten Objekte empfängt.")
+parser.add_argument("mqtt_topic", type=str, help="Der MQTT Topic, der die erkannten Objekte empfängt.")
 args = parser.parse_args()
 
 # RTSP-Stream-URL und Zielordner für die Frames aus den Argumenten
 rtsp_stream_url = args.rtsp_stream_url
 output_dir = args.output_dir
+mqtt_broker_url = args.mqtt_broker_url
+mqtt_topic = args.mqtt_topic
 
 # Erstelle einen Ordner, um die Ergebnisse zu speichern, falls er nicht existiert
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
+
+# MQTT Broker konfigurieren
+mqtt_broker = mqtt.Client()
+mqtt_broker.connect(mqtt_broker_url, 1883, 60)
 
 # Lade das YOLO11-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
@@ -70,6 +79,12 @@ while True:
                         output_file = f'{output_dir}/frame_{current_date_time}_{frame_count}.jpg'
                         cv2.imwrite(output_file, annotated_frame)
                         frame_count += 1
+
+                        # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
+                        class_names = {0: 'Person', 15: 'Cat'}
+
+                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten box.cls und current_date_time im json Format
+                        mqtt_broker.publish(mqtt_topic, f'{{"cls": "{class_names.get(box.cls, "Unknown")}", "time": "{current_date_time}"}}')
 
         # Zeige den Stream in einem Fenster an
         # cv2.imshow('Live Camera Detection', annotated_frame)
