@@ -106,8 +106,8 @@ while True:
                         class_names = {0: 'Person', 15: 'Cat'}
 
                         # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten box.cls und current_date_time im json Format
-                        #mqtt_broker.publish(mqtt_topic, f'{{"cls": "{class_names.get(box.cls, "Unknown")}", "time": "{current_date_time}"}}')
-                        mqtt_broker.publish(mqtt_topic, f'{{"cls": "{box.cls}", "time": "{current_date_time}"}}')
+                        mqtt_broker.publish(mqtt_topic, f'{{"cls": "{class_names.get(box.cls, "Unknown")}", "time": "{current_date_time}"}}')
+                        #mqtt_broker.publish(mqtt_topic, f'{{"cls": "{box.cls}", "time": "{current_date_time}"}}')
 
         # Zeige den Stream in einem Fenster an
         # cv2.imshow('Live Camera Detection', annotated_frame)
