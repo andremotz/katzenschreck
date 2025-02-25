@@ -4,6 +4,8 @@ import time
 from ultralytics import YOLO
 import argparse
 import paho.mqtt.client as mqtt
+import threading
+
 
 # Function to read the configuration from [config.txt](http://_vscodecontentref_/2)
 def read_config(file_path):
@@ -52,6 +54,23 @@ if not os.path.exists(output_dir):
 mqtt_broker = mqtt.Client()
 mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
 
+# Function to send a ping to the MQTT broker every 30 seconds
+def mqtt_ping():
+    while True:
+        time.sleep(30)
+        mqtt_broker = mqtt.Client()
+        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
+        mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
+        mqtt_broker.loop_start()
+        mqtt_broker.publish(mqtt_topic, "ping")
+        mqtt_broker.loop_stop()
+        mqtt_broker.disconnect()
+
+# Start the MQTT ping thread
+ping_thread = threading.Thread(target=mqtt_ping)
+ping_thread.daemon = True
+ping_thread.start()
+
 # Lade das YOLO-Modell
 model = YOLO('yolo11n.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
 
@@ -70,18 +89,12 @@ while True:
     # Verarbeite Frames, bis der Stream abbricht
     while cap.isOpened():
         ret, frame = cap.read()
-
-        ret, frame = cap.read()
         if not ret:
             break
 
         # Führe die Objekterkennung auf dem aktuellen Frame durch
         results = model(frame)
 
-        # Standardmäßig kein annotiertes Frame
-        annotated_frame = frame.copy()
-
-        # Filtere nur die Erkennung von Menschen (Klasse 0) und Katzen (Klasse 15)
         for result in results:
             for box in result.boxes:
                 # Extract the class ID from the tensor
@@ -91,12 +104,15 @@ while True:
                 if class_id == 0 or class_id == 15:
                     # mache nur weiter, wenn die accuracy über 50% ist
                     if box.conf > 0.5:
+                        # Zeichne die erkannten Objekte auf dem Frame
+                        annotated_frame = result.plot()
+
                         # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS-MS'
                         current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
 
                         # Speichere das Frame mit den erkannten Objekten
                         output_file = f'{output_dir}/frame_{current_date_time}.jpg'
-                        cv2.imwrite(output_file, result.plot())
+                        cv2.imwrite(output_file, annotated_frame)
 
                         # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                         class_names = {0: 'Person', 15: 'Cat'}
@@ -110,6 +126,8 @@ while True:
                         print(f'Detected class confidence: {detected_class_confidence}')
 
                         # Open MQTT connection
+                        mqtt_broker = mqtt.Client()
+                        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
                         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
                         # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
@@ -117,6 +135,13 @@ while True:
 
                         # Close MQTT connection
                         mqtt_broker.disconnect()
+
+        # Zeige den Stream in einem Fenster an
+        # cv2.imshow('Live Camera Detection', annotated_frame)
+
+        # Drücke 'q', um den Stream zu beenden
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
         # Kamera- und Fenster-Ressourcen freigeben
         cap.release()
