@@ -62,7 +62,8 @@ def mqtt_ping():
         mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
         mqtt_broker.loop_start()
-        mqtt_broker.publish(mqtt_topic, "ping")
+        extended_mqtt_topic = f'{mqtt_topic}/ping'
+        mqtt_broker.publish(extended_mqtt_topic, "ping")
         mqtt_broker.loop_stop()
         mqtt_broker.disconnect()
 
@@ -130,8 +131,11 @@ while True:
                         mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
                         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
-                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
-                        mqtt_broker.publish(mqtt_topic, f'{{"time": "{current_date_time}", "class": "{detected_class_name}", "confidence": "{detected_class_confidence}"}}')
+                        # Extend mqtt_topic with detected_class_name
+                        extended_mqtt_topic = f'{mqtt_topic}/{detected_class_name}'
+
+                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic extended_mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
+                        mqtt_broker.publish(extended_mqtt_topic, f'{{"time": "{current_date_time}", "class": "{detected_class_name}", "confidence": "{detected_class_confidence}"}}')
 
                         # Close MQTT connection
                         mqtt_broker.disconnect()
