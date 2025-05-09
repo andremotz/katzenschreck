@@ -31,6 +31,7 @@ mqtt_broker_port = int(config.get('mqtt_broker_port', 1883))  # Default to 1883 
 mqtt_topic = config.get('mqtt_topic')
 mqtt_username = config.get('mqtt_username')
 mqtt_password = config.get('mqtt_password')
+confidence_threshold = float(config.get('confidence_threshold', 0.5))  # Default to 0.5 if not specified
 
 if not rtsp_stream_url:
     raise ValueError("RTSP stream URL not found in config.txt")
@@ -103,8 +104,8 @@ while True:
                 
                 # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
                 if class_id == 0 or class_id == 15:
-                    # mache nur weiter, wenn die accuracy über 50% ist
-                    if box.conf > 0.5:
+                    # mache nur weiter, wenn die accuracy über dem konfigurierten Schwellenwert ist
+                    if box.conf > confidence_threshold:
                         # Zeichne die erkannten Objekte auf dem Frame
                         annotated_frame = result.plot()
 
