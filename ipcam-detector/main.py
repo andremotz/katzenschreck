@@ -32,6 +32,11 @@ mqtt_topic = config.get('mqtt_topic')
 mqtt_username = config.get('mqtt_username')
 mqtt_password = config.get('mqtt_password')
 confidence_threshold = float(config.get('confidence_threshold', 0.5))  # Default to 0.5 if not specified
+ignore_zone_str = config.get('ignore_zone')
+if ignore_zone_str:
+    ignore_zone = [float(x) for x in ignore_zone_str.split(',')]
+else:
+    ignore_zone = None
 
 if not rtsp_stream_url:
     raise ValueError("RTSP stream URL not found in config.txt")
@@ -106,6 +111,21 @@ while True:
                 if class_id == 0 or class_id == 15:
                     # mache nur weiter, wenn die accuracy über dem konfigurierten Schwellenwert ist
                     if box.conf > confidence_threshold:
+                        # Prüfe, ob die Box in der Ignore-Zone liegt
+                        if ignore_zone:
+                            # Box-Koordinaten (x1, y1, x2, y2) in Pixel
+                            x1, y1, x2, y2 = box.xyxy[0].tolist()
+                            frame_h, frame_w = frame.shape[:2]
+                            # Box-Koordinaten als Prozentwerte
+                            box_xmin = x1 / frame_w
+                            box_ymin = y1 / frame_h
+                            box_xmax = x2 / frame_w
+                            box_ymax = y2 / frame_h
+                            # Ignore-Zone-Koordinaten
+                            iz_xmin, iz_ymin, iz_xmax, iz_ymax = ignore_zone
+                            # Prüfe, ob sich die Box mit der Ignore-Zone überschneidet
+                            if not (box_xmax < iz_xmin or box_xmin > iz_xmax or box_ymax < iz_ymin or box_ymin > iz_ymax):
+                                continue  # Box liegt (ganz oder teilweise) in der Ignore-Zone, also überspringen
                         # Zeichne die erkannten Objekte auf dem Frame
                         annotated_frame = result.plot()
 
