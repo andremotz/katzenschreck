@@ -5,6 +5,7 @@ from ultralytics import YOLO
 import argparse
 import paho.mqtt.client as mqtt
 import threading
+from results_cleanup import cleanup_results_folder
 
 
 # Function to read the configuration from [config.txt](http://_vscodecontentref_/2)
@@ -37,6 +38,7 @@ if ignore_zone_str:
     ignore_zone = [float(x) for x in ignore_zone_str.split(',')]
 else:
     ignore_zone = None
+usage_threshold = float(config.get('usage_threshold', 0.8))  # Default zu 0.8 falls nicht gesetzt
 
 if not rtsp_stream_url:
     raise ValueError("RTSP stream URL not found in config.txt")
@@ -132,6 +134,8 @@ while True:
                         # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS-MS'
                         current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
 
+                        # Vor dem Speichern: Speicherplatz prüfen und ggf. alte Bilder löschen
+                        cleanup_results_folder(output_dir, usage_threshold)
                         # Speichere das Frame mit den erkannten Objekten
                         output_file = f'{output_dir}/frame_{current_date_time}.jpg'
                         cv2.imwrite(output_file, annotated_frame)
