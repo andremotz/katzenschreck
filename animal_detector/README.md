@@ -1,1 +1,0 @@
-python ipcam-detector/main.py <rtsp_stream_url>  <local_output_folder>
