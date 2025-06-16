@@ -1,0 +1,32 @@
+# .gitlab-ci.yml
+
+# Docker-Build-Image für Raspberry Pi 4 (ARM-Architektur)
+image: docker:latest
+#image: docker:linux/arm/v7
+
+# Docker-In-Docker Service, um den Docker-Befehl auszuführen
+services:
+  - docker:dind
+
+# Variablen für die Docker-Registry und das Image
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest  # Nutzt automatisch die Registry URL von GitLab
+
+# Job zur Authentifizierung und zum Erstellen & Pushen des Docker-Images
+build_and_push:
+  stage: build
+  tags: 
+    - docker
+  script:
+    # Anmeldung bei der GitLab-Registry
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+
+    # Build des Docker-Images für ARM (Raspberry Pi)
+    - docker build -t $DOCKER_IMAGE --platform linux/arm/v7 .
+    #- docker build -t $DOCKER_IMAGE .
+
+    # Push des Docker-Images in die GitLab-Registry
+    - docker push $DOCKER_IMAGE
+  only:
+    - main  # Dieser Job wird nur auf dem 'main'-Branch ausgeführt
