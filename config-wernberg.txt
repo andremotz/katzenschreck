@@ -1,0 +1,9 @@
+rtsp_stream_url=rtsp://10.3.0.113:554/user=admin&password=tlJwpbo6&channel=1&stream=1.sdp?real_stream
+
+mqtt_broker_url=10.3.0.14
+mqtt_broker_port=1883
+mqtt_topic=object_detection
+mqtt_username=mqtt-broker
+mqtt_password=KaUderWä!sch
+confidence_threshold=0.7
+ignore_zone=0.45,0.75,0.55,1.0
