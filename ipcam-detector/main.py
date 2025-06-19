@@ -101,6 +101,7 @@ print(f"Initial MQTT connection status: {mqtt_connected}")
 
 # Function to send a ping to the MQTT broker every 30 seconds
 def mqtt_ping():
+    global mqtt_connected
     print("MQTT ping thread started")
     while True:
         time.sleep(30)
