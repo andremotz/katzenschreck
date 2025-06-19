@@ -26,17 +26,20 @@ def on_disconnect(client, userdata, rc):
     mqtt_connected = False
 
 def connect_mqtt():
-    global mqtt_broker
+    global mqtt_broker, mqtt_connected
     try:
+        print(f"Attempting to connect to MQTT broker at {mqtt_broker_url}:{mqtt_broker_port}")
         mqtt_broker = mqtt.Client()
         mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
         mqtt_broker.on_connect = on_connect
         mqtt_broker.on_disconnect = on_disconnect
         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
         mqtt_broker.loop_start()
+        print("MQTT connection initiated successfully")
         return True
     except Exception as e:
         print(f"Error connecting to MQTT broker: {e}")
+        mqtt_connected = False
         return False
 
 # Function to read the configuration from [config.txt](http://_vscodecontentref_/2)
@@ -92,10 +95,16 @@ if not os.path.exists(output_dir):
 # MQTT Broker konfigurieren
 connect_mqtt()
 
+# Wait a moment for the connection to establish
+time.sleep(2)
+print(f"Initial MQTT connection status: {mqtt_connected}")
+
 # Function to send a ping to the MQTT broker every 30 seconds
 def mqtt_ping():
+    print("MQTT ping thread started")
     while True:
         time.sleep(30)
+        print(f"Ping check - mqtt_connected: {mqtt_connected}")
         if not mqtt_connected:
             print("Attempting to reconnect to MQTT broker...")
             connect_mqtt()
@@ -103,10 +112,14 @@ def mqtt_ping():
             try:
                 extended_mqtt_topic = f'{mqtt_topic}/ping'
                 current_timestamp = int(time.time())
+                print(f"Sending ping to {extended_mqtt_topic} at {current_timestamp}")
                 mqtt_broker.publish(extended_mqtt_topic, f'{{"timestamp": {current_timestamp}}}')
+                print("Ping sent successfully")
             except Exception as e:
                 print(f"Error sending MQTT ping: {e}")
                 mqtt_connected = False
+        else:
+            print("Cannot send ping - not connected to MQTT broker")
 
 # Start the MQTT ping thread
 ping_thread = threading.Thread(target=mqtt_ping)
