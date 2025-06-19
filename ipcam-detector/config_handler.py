@@ -45,7 +45,8 @@ class ConfigHandler:
             'mqtt_username': self.config.get('mqtt_username'),
             'mqtt_password': self.config.get('mqtt_password'),
             'confidence_threshold': float(self.config.get('confidence_threshold', 0.5)),
-            'usage_threshold': float(self.config.get('usage_threshold', 0.8))
+            'usage_threshold': float(self.config.get('usage_threshold', 0.8)),
+            'save_all_frames': self.config.get('save_all_frames', 'false').lower() == 'true'
         }
         
         # Parse ignore zone if present

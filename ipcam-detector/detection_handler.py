@@ -31,8 +31,26 @@ class DetectionHandler:
         # Prüfe, ob sich die Box mit der Ignore-Zone überschneidet
         return not (box_xmax < iz_xmin or box_xmin > iz_xmax or box_ymax < iz_ymin or box_ymin > iz_ymax)
         
-    def process_detections(self, frame, mqtt_handler, output_dir, usage_threshold):
+    def save_frame(self, frame, output_dir, usage_threshold, prefix="frame"):
+        """Save a frame to disk"""
+        # Vor dem Speichern: Speicherplatz prüfen und ggf. alte Bilder löschen
+        from results_cleanup import cleanup_results_folder
+        cleanup_results_folder(output_dir, usage_threshold)
+        
+        # Generate timestamp
+        current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
+        
+        # Speichere das Frame
+        output_file = f'{output_dir}/{prefix}_{current_date_time}.jpg'
+        cv2.imwrite(output_file, frame)
+        print(f"Frame saved: {output_file}")
+        
+    def process_detections(self, frame, mqtt_handler, output_dir, usage_threshold, save_all_frames=False):
         """Process frame for detections and handle results"""
+        # Save frame if save_all_frames is enabled
+        if save_all_frames:
+            self.save_frame(frame, output_dir, usage_threshold, "all_frame")
+        
         results = self.model(frame)
         detections_found = False
         

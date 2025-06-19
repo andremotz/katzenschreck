@@ -56,7 +56,7 @@ def main():
                 break
             
             # Process detections
-            detection_handler.process_detections(frame, mqtt_handler, output_dir, config['usage_threshold'])
+            detection_handler.process_detections(frame, mqtt_handler, output_dir, config['usage_threshold'], config['save_all_frames'])
             
             # Check for quit command
             if cv2.waitKey(1) & 0xFF == ord('q'):
