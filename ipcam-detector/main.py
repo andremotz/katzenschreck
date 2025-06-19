@@ -29,6 +29,10 @@ def setup_rtsp_capture(rtsp_url):
             rtsp_url += '?tcp'
     
     print(f"Using RTSP URL with TCP transport: {rtsp_url}")
+    
+    # Set OpenCV backend to FFMPEG for better RTSP handling
+    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+    
     cap = cv2.VideoCapture(rtsp_url)
     
     # Set buffer size to minimum to reduce latency
@@ -37,15 +41,8 @@ def setup_rtsp_capture(rtsp_url):
     # Set RTSP transport to TCP for better reliability
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('H', '2', '6', '4'))
     
-    # Set timeout and retry settings
-    cap.set(cv2.CAP_PROP_TIMEOUT, 5000)  # 5 second timeout
-    
     # Set frame rate to reduce processing load
     cap.set(cv2.CAP_PROP_FPS, 10)
-    
-    # Set resolution (optional - comment out if you want original resolution)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
     return cap
 
