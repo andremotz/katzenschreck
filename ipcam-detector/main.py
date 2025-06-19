@@ -6,6 +6,19 @@ from config_handler import ConfigHandler
 from detection_handler import DetectionHandler
 
 
+def get_latest_frame(cap):
+    """Get the most recent frame by clearing the buffer first"""
+    # Clear the buffer by grabbing all available frames
+    while True:
+        grabbed = cap.grab()
+        if not grabbed:
+            break
+    
+    # Now read the most recent frame
+    ret, frame = cap.read()
+    return ret, frame
+
+
 def main():
     # Initialize configuration
     config_handler = ConfigHandler()
@@ -41,6 +54,9 @@ def main():
     while True:
         cap = cv2.VideoCapture(config['rtsp_stream_url'])
         
+        # Set buffer size to minimum to reduce latency
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        
         # Check if stream opened successfully
         if not cap.isOpened():
             print(f"Fehler beim Öffnen des RTSP-Streams: {config['rtsp_stream_url']}. Versuche erneut in 5 Sekunden...")
@@ -51,8 +67,10 @@ def main():
         
         # Process frames
         while cap.isOpened():
-            ret, frame = cap.read()
+            # Get the most recent frame by clearing buffer first
+            ret, frame = get_latest_frame(cap)
             if not ret:
+                print("Fehler beim Lesen des Frames. Versuche erneut...")
                 break
             
             # Process detections
