@@ -1,5 +1,6 @@
 import cv2
 import time
+import os
 from ultralytics import YOLO
 
 
@@ -9,6 +10,7 @@ class DetectionHandler:
         self.ignore_zone = ignore_zone
         self.model = None  # Lazy loading
         self.class_names = {0: 'Person', 15: 'Cat'}
+        self.last_cleanup_time = 0  # Track last cleanup time
         
     def _load_model(self):
         """Load YOLO model lazily when first needed"""
@@ -44,17 +46,41 @@ class DetectionHandler:
         
     def save_frame(self, frame, output_dir, usage_threshold, prefix="frame"):
         """Save a frame to disk"""
-        # Vor dem Speichern: Speicherplatz prüfen und ggf. alte Bilder löschen
-        from results_cleanup import cleanup_results_folder
-        cleanup_results_folder(output_dir, usage_threshold)
+        # Debug: Prüfe Frame-Daten
+        if frame is None:
+            print("ERROR: Frame is None, cannot save")
+            return
+            
+        print(f"DEBUG: Frame shape: {frame.shape}, dtype: {frame.dtype}")
+        print(f"DEBUG: Output directory: {output_dir}")
+        print(f"DEBUG: Directory exists: {os.path.exists(output_dir)}")
+        
+        # Cleanup nur alle 60 Sekunden (um Performance zu verbessern)
+        current_time = time.time()
+        if current_time - self.last_cleanup_time > 60:
+            from results_cleanup import cleanup_results_folder
+            cleanup_results_folder(output_dir, usage_threshold)
+            self.last_cleanup_time = current_time
         
         # Generate timestamp
         current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
         
         # Speichere das Frame
         output_file = f'{output_dir}/{prefix}_{current_date_time}.jpg'
-        cv2.imwrite(output_file, frame)
-        print(f"Frame saved: {output_file}")
+        print(f"DEBUG: Attempting to save: {output_file}")
+        
+        success = cv2.imwrite(output_file, frame)
+        if success:
+            print(f"Frame saved: {output_file}")
+        else:
+            print(f"Failed to save frame: {output_file}")
+            # Debug: Prüfe Speicherplatz
+            try:
+                import shutil
+                total, used, free = shutil.disk_usage(output_dir)
+                print(f"DEBUG: Disk usage - Total: {total}, Used: {used}, Free: {free}")
+            except Exception as e:
+                print(f"DEBUG: Could not check disk usage: {e}")
         
     def process_detections(self, frame, mqtt_handler, output_dir, usage_threshold, save_all_frames=False):
         """Process frame for detections and handle results"""
