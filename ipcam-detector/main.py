@@ -177,3 +177,7 @@ while True:
         cap.release()
 
 print(f'Frames mit erkannten Objekten sind im Ordner "{output_dir}" gespeichert.')
+
+
+if __name__ == "__main__":
+    main() 
