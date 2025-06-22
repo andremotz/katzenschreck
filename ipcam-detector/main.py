@@ -71,7 +71,8 @@ def mqtt_ping():
         mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
         mqtt_broker.loop_start()
         extended_mqtt_topic = f'{mqtt_topic}/ping'
-        mqtt_broker.publish(extended_mqtt_topic, "ping")
+        current_timestamp = int(time.time())
+        mqtt_broker.publish(extended_mqtt_topic, f'{{"timestamp": {current_timestamp}}}')
         mqtt_broker.loop_stop()
         mqtt_broker.disconnect()
 
