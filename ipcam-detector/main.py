@@ -111,7 +111,7 @@ while True:
                 class_id = int(box.cls.item())
                 
                 # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
-                if class_id == 0 or class_id == 15:
+                if class_id == 15:
                     # mache nur weiter, wenn die accuracy über dem konfigurierten Schwellenwert ist
                     if box.conf > confidence_threshold:
                         # Prüfe, ob die Box in der Ignore-Zone liegt
