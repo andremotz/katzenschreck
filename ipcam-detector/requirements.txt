@@ -34,7 +34,7 @@ torchvision==0.17.2
 tqdm==4.66.6
 typing_extensions==4.12.2
 tzdata==2024.2
-ultralytics==8.3.27
+ultralytics>=8.3.50
 ultralytics-thop==2.0.10
 urllib3==2.2.3
 zipp==3.20.2
