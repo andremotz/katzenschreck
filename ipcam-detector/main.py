@@ -82,7 +82,7 @@ ping_thread.daemon = True
 ping_thread.start()
 
 # Lade das YOLO-Modell
-model = YOLO('yolo11s.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
+model = YOLO('yolo12x.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
 
 # Verarbeite den Kamera-Stream in Echtzeit
 while True:
