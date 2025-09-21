@@ -145,13 +145,37 @@ class DatabaseHandler:
         try:
             cursor = connection.cursor()
             
-            # Frame in JPEG-Format konvertieren (im Speicher)
-            success, jpeg_buffer = cv2.imencode('.jpg', frame)
+            # Frame skalieren um Dateigröße zu reduzieren
+            height, width = frame.shape[:2]
+            if width > 1280:  # Maximale Breite von 1280px
+                scale_factor = 1280 / width
+                new_width = 1280
+                new_height = int(height * scale_factor)
+                frame = cv2.resize(frame, (new_width, new_height))
+            
+            # Frame in JPEG-Format konvertieren mit hoher Kompression
+            jpeg_params = [cv2.IMWRITE_JPEG_QUALITY, 70]  # 70% Qualität für kleinere Dateigröße
+            success, jpeg_buffer = cv2.imencode('.jpg', frame, jpeg_params)
             if not success:
                 print("Fehler beim Konvertieren des Frames zu JPEG")
                 return False
             
             jpeg_data = jpeg_buffer.tobytes()
+            
+            # Überprüfe Dateigröße (MariaDB Standard max_allowed_packet ist oft 16MB)
+            max_size = 15 * 1024 * 1024  # 15MB als Sicherheitsgrenze
+            if len(jpeg_data) > max_size:
+                print(f"JPEG zu groß ({len(jpeg_data)} Bytes). Versuche stärkere Kompression...")
+                # Versuche mit niedrigerer Qualität
+                jpeg_params = [cv2.IMWRITE_JPEG_QUALITY, 40]
+                success, jpeg_buffer = cv2.imencode('.jpg', frame, jpeg_params)
+                if success:
+                    jpeg_data = jpeg_buffer.tobytes()
+                    if len(jpeg_data) > max_size:
+                        print(f"Frame immer noch zu groß ({len(jpeg_data)} Bytes). Überspringe Speicherung.")
+                        return False
+                else:
+                    return False
             
             # Insert-Statement ausführen
             sql = """
