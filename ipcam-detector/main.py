@@ -6,178 +6,264 @@ import argparse
 import paho.mqtt.client as mqtt
 import threading
 from results_cleanup import cleanup_results_folder
+from typing import Optional, List, Tuple
+import json
 
 
-# Function to read the configuration from [config.txt](http://_vscodecontentref_/2)
-def read_config(file_path):
-    config = {}
-    with open(file_path, 'r') as file:
-        for line in file:
-            if '=' in line:
-                key, value = line.split('=', 1)
-                config[key.strip()] = value.strip()
-    return config
+class Config:
+    """Konfigurationsklasse für das Katzenschreck-System"""
+    
+    def __init__(self, config_file_path: str):
+        self.config_file_path = config_file_path
+        self._load_config()
+        self._validate_config()
+    
+    def _load_config(self):
+        """Lädt die Konfiguration aus der Datei"""
+        config = {}
+        with open(self.config_file_path, 'r') as file:
+            for line in file:
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+        
+        self.rtsp_stream_url = config.get('rtsp_stream_url')
+        self.mqtt_broker_url = config.get('mqtt_broker_url')
+        self.mqtt_broker_port = int(config.get('mqtt_broker_port', 1883))
+        self.mqtt_topic = config.get('mqtt_topic')
+        self.mqtt_username = config.get('mqtt_username')
+        self.mqtt_password = config.get('mqtt_password')
+        self.confidence_threshold = float(config.get('confidence_threshold', 0.5))
+        self.usage_threshold = float(config.get('usage_threshold', 0.8))
+        
+        ignore_zone_str = config.get('ignore_zone')
+        if ignore_zone_str:
+            self.ignore_zone = [float(x) for x in ignore_zone_str.split(',')]
+        else:
+            self.ignore_zone = None
+    
+    def _validate_config(self):
+        """Validiert die Konfiguration"""
+        required_fields = [
+            ('rtsp_stream_url', self.rtsp_stream_url),
+            ('mqtt_broker_url', self.mqtt_broker_url),
+            ('mqtt_topic', self.mqtt_topic),
+            ('mqtt_username', self.mqtt_username),
+            ('mqtt_password', self.mqtt_password)
+        ]
+        
+        for field_name, field_value in required_fields:
+            if not field_value:
+                raise ValueError(f"{field_name} not found in config.txt")
 
-# Argumente definieren
-parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
-parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
-args = parser.parse_args()
 
-# Konfigurationswerte aus [config.txt](http://_vscodecontentref_/3) lesen
-config_file_path = '../config.txt'
-config = read_config(config_file_path)
-rtsp_stream_url = config.get('rtsp_stream_url')
-mqtt_broker_url = config.get('mqtt_broker_url')
-mqtt_broker_port = int(config.get('mqtt_broker_port', 1883))  # Default to 1883 if not specified
-mqtt_topic = config.get('mqtt_topic')
-mqtt_username = config.get('mqtt_username')
-mqtt_password = config.get('mqtt_password')
-confidence_threshold = float(config.get('confidence_threshold', 0.5))  # Default to 0.5 if not specified
-ignore_zone_str = config.get('ignore_zone')
-if ignore_zone_str:
-    ignore_zone = [float(x) for x in ignore_zone_str.split(',')]
-else:
-    ignore_zone = None
-usage_threshold = float(config.get('usage_threshold', 0.8))  # Default zu 0.8 falls nicht gesetzt
+class MQTTHandler:
+    """MQTT-Handler für die Kommunikation mit dem MQTT-Broker"""
+    
+    def __init__(self, config: Config):
+        self.config = config
+        self.ping_thread = None
+        self._start_ping_thread()
+    
+    def _start_ping_thread(self):
+        """Startet den MQTT-Ping-Thread"""
+        self.ping_thread = threading.Thread(target=self._mqtt_ping)
+        self.ping_thread.daemon = True
+        self.ping_thread.start()
+    
+    def _mqtt_ping(self):
+        """Sendet alle 30 Sekunden einen Ping an den MQTT-Broker"""
+        while True:
+            time.sleep(30)
+            client = mqtt.Client()
+            client.username_pw_set(self.config.mqtt_username, self.config.mqtt_password)
+            try:
+                client.connect(self.config.mqtt_broker_url, self.config.mqtt_broker_port, 60)
+                client.loop_start()
+                extended_topic = f'{self.config.mqtt_topic}/ping'
+                current_timestamp = int(time.time())
+                client.publish(extended_topic, json.dumps({"timestamp": current_timestamp}))
+                client.loop_stop()
+                client.disconnect()
+            except Exception as e:
+                print(f"MQTT Ping Fehler: {e}")
+    
+    def publish_detection(self, class_name: str, confidence: float, timestamp: str):
+        """Sendet eine Erkennungs-Nachricht an den MQTT-Broker"""
+        client = mqtt.Client()
+        client.username_pw_set(self.config.mqtt_username, self.config.mqtt_password)
+        
+        try:
+            client.connect(self.config.mqtt_broker_url, self.config.mqtt_broker_port, 60)
+            extended_topic = f'{self.config.mqtt_topic}/{class_name}'
+            message = json.dumps({
+                "time": timestamp,
+                "class": class_name,
+                "confidence": confidence
+            })
+            client.publish(extended_topic, message)
+            client.disconnect()
+        except Exception as e:
+            print(f"MQTT Publish Fehler: {e}")
 
-if not rtsp_stream_url:
-    raise ValueError("RTSP stream URL not found in config.txt")
-if not mqtt_broker_url:
-    raise ValueError("MQTT broker URL not found in config.txt")
-if not mqtt_topic:
-    raise ValueError("MQTT topic not found in config.txt")
-if not mqtt_username:
-    raise ValueError("MQTT username not found in config.txt")
-if not mqtt_password:
-    raise ValueError("MQTT password not found in config.txt")
 
-# Zielordner für die Frames aus den Argumenten
-output_dir = args.output_dir
-
-# Erstelle einen Ordner, um die Ergebnisse zu speichern, falls er nicht existiert
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
-# MQTT Broker konfigurieren
-mqtt_broker = mqtt.Client()
-mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
-
-# Function to send a ping to the MQTT broker every 30 seconds
-def mqtt_ping():
-    while True:
-        time.sleep(30)
-        mqtt_broker = mqtt.Client()
-        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
-        mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
-        mqtt_broker.loop_start()
-        extended_mqtt_topic = f'{mqtt_topic}/ping'
-        current_timestamp = int(time.time())
-        mqtt_broker.publish(extended_mqtt_topic, f'{{"timestamp": {current_timestamp}}}')
-        mqtt_broker.loop_stop()
-        mqtt_broker.disconnect()
-
-# Start the MQTT ping thread
-ping_thread = threading.Thread(target=mqtt_ping)
-ping_thread.daemon = True
-ping_thread.start()
-
-# Lade das YOLO-Modell
-model = YOLO('yolo12x.pt')  # 'yolo11n.pt' ist die Nano-Version, du kannst andere Varianten wählen
-
-# Verarbeite den Kamera-Stream in Echtzeit
-while True:
-    cap = cv2.VideoCapture(rtsp_stream_url)
-
-    # Überprüfen, ob der Stream korrekt geöffnet wurde
-    if not cap.isOpened():
-        print(f"Fehler beim Öffnen des RTSP-Streams: {rtsp_stream_url}. Versuche erneut in 5 Sekunden...")
-        time.sleep(5)
-        continue  # Versuche erneut
-
-    print("Verbindung zum RTSP-Stream erfolgreich aufgebaut.")
-
-    # Verarbeite Frames, bis der Stream abbricht
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # Führe die Objekterkennung auf dem aktuellen Frame durch
-        results = model(frame)
-
+class ObjectDetector:
+    """YOLO-Objekterkennungsklasse"""
+    
+    CLASS_NAMES = {0: 'Person', 15: 'Cat'}
+    TARGET_CLASS_ID = 15  # Katze
+    
+    def __init__(self, model_path: str = 'yolo12x.pt'):
+        self.model = YOLO(model_path)
+    
+    def detect_objects(self, frame) -> Tuple[List[Tuple[int, float, List[float]]], object]:
+        """Erkennt Objekte im Frame und gibt relevante Erkennungen zurück"""
+        results = self.model(frame)
+        detections = []
+        
         for result in results:
             for box in result.boxes:
-                # Extract the class ID from the tensor
                 class_id = int(box.cls.item())
                 
-                # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
-                if class_id == 15 and class_id != 0:
-                    # mache nur weiter, wenn die accuracy über dem konfigurierten Schwellenwert ist
-                    if box.conf > confidence_threshold:
-                        # Prüfe, ob die Box in der Ignore-Zone liegt
-                        if ignore_zone:
-                            # Box-Koordinaten (x1, y1, x2, y2) in Pixel
-                            x1, y1, x2, y2 = box.xyxy[0].tolist()
-                            frame_h, frame_w = frame.shape[:2]
-                            # Box-Koordinaten als Prozentwerte
-                            box_xmin = x1 / frame_w
-                            box_ymin = y1 / frame_h
-                            box_xmax = x2 / frame_w
-                            box_ymax = y2 / frame_h
-                            # Ignore-Zone-Koordinaten
-                            iz_xmin, iz_ymin, iz_xmax, iz_ymax = ignore_zone
-                            # Prüfe, ob sich die Box mit der Ignore-Zone überschneidet
-                            if not (box_xmax < iz_xmin or box_xmin > iz_xmax or box_ymax < iz_ymin or box_ymin > iz_ymax):
-                                continue  # Box liegt (ganz oder teilweise) in der Ignore-Zone, also überspringen
-                        # Zeichne die erkannten Objekte auf dem Frame
-                        annotated_frame = result.plot()
+                # Nur Katzen erkennen (und keine Personen)
+                if class_id == self.TARGET_CLASS_ID and class_id != 0:
+                    confidence = box.conf.item()
+                    bbox = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
+                    detections.append((class_id, confidence, bbox))
+        
+        return detections, results
+    
+    def is_in_ignore_zone(self, bbox: List[float], frame_shape: Tuple[int, int], ignore_zone: Optional[List[float]]) -> bool:
+        """Prüft, ob die Bounding Box in der Ignore-Zone liegt"""
+        if not ignore_zone:
+            return False
+        
+        x1, y1, x2, y2 = bbox
+        frame_h, frame_w = frame_shape[:2]
+        
+        # Box-Koordinaten als Prozentwerte
+        box_xmin = x1 / frame_w
+        box_ymin = y1 / frame_h
+        box_xmax = x2 / frame_w
+        box_ymax = y2 / frame_h
+        
+        # Ignore-Zone-Koordinaten
+        iz_xmin, iz_ymin, iz_xmax, iz_ymax = ignore_zone
+        
+        # Prüfe, ob sich die Box mit der Ignore-Zone überschneidet
+        return not (box_xmax < iz_xmin or box_xmin > iz_xmax or box_ymax < iz_ymin or box_ymin > iz_ymax)
 
-                        # this variable returns the current date and time in the format 'YYYY-MM-DD_HH-MM-SS-MS'
-                        current_date_time = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
 
-                        # Vor dem Speichern: Speicherplatz prüfen und ggf. alte Bilder löschen
-                        cleanup_results_folder(output_dir, usage_threshold)
-                        # Speichere das Frame mit den erkannten Objekten
-                        output_file = f'{output_dir}/frame_{current_date_time}.jpg'
-                        cv2.imwrite(output_file, annotated_frame)
+class StreamProcessor:
+    """Hauptklasse für die Verarbeitung des Video-Streams"""
+    
+    def __init__(self, config: Config, output_dir: str):
+        self.config = config
+        self.output_dir = output_dir
+        self.detector = ObjectDetector()
+        self.mqtt_handler = MQTTHandler(config)
+        
+        # Erstelle Ausgabeverzeichnis
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+    
+    def _save_detection(self, annotated_frame, timestamp: str):
+        """Speichert das erkannte Frame"""
+        cleanup_results_folder(self.output_dir, self.config.usage_threshold)
+        output_file = f'{self.output_dir}/frame_{timestamp}.jpg'
+        cv2.imwrite(output_file, annotated_frame)
+    
+    def _process_detections(self, frame, detections, results):
+        """Verarbeitet die Erkennungen"""
+        for class_id, confidence, bbox in detections:
+            if confidence > self.config.confidence_threshold:
+                # Prüfe Ignore-Zone
+                if self.detector.is_in_ignore_zone(bbox, frame.shape, self.config.ignore_zone):
+                    continue
+                
+                # Annotiere Frame
+                annotated_frame = None
+                for result in results:
+                    annotated_frame = result.plot()
+                    break
+                
+                if annotated_frame is None:
+                    continue
+                
+                # Zeitstempel generieren
+                timestamp = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
+                
+                # Frame speichern
+                self._save_detection(annotated_frame, timestamp)
+                
+                # Informationen ausgeben
+                class_name = self.detector.CLASS_NAMES.get(class_id, "Unknown")
+                print(f'Detected class ID: {class_id}')
+                print(f'Detected class name: {class_name}')
+                print(f'Detected class confidence: {confidence}')
+                
+                # MQTT-Nachricht senden
+                self.mqtt_handler.publish_detection(class_name, confidence, timestamp)
+    
+    def run(self):
+        """Hauptschleife für die Stream-Verarbeitung"""
+        while True:
+            cap = cv2.VideoCapture(self.config.rtsp_stream_url)
+            
+            if not cap.isOpened():
+                print(f"Fehler beim Öffnen des RTSP-Streams: {self.config.rtsp_stream_url}. Versuche erneut in 5 Sekunden...")
+                time.sleep(5)
+                continue
+            
+            print("Verbindung zum RTSP-Stream erfolgreich aufgebaut.")
+            
+            # Verarbeite Frames
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                # Objekterkennung
+                detections, results = self.detector.detect_objects(frame)
+                
+                # Verarbeite Erkennungen
+                if detections:
+                    self._process_detections(frame, detections, results)
+                
+                # Beende bei 'q'
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    cap.release()
+                    return
+            
+            cap.release()
+        
+        print(f'Frames mit erkannten Objekten sind im Ordner "{self.output_dir}" gespeichert.')
 
-                        # Klasse 0 ist 'Person' und Klasse 15 ist 'Katze' (COCO-Datensatzklassennummern)
-                        class_names = {0: 'Person', 15: 'Cat'}
 
-                        # Print the class ID to the terminal
-                        detected_class_id = int(box.cls.item())
-                        detected_class_name = class_names.get(detected_class_id, "Unknown")
-                        detected_class_confidence = box.conf.item()
-                        print(f'Detected class ID: {detected_class_id}')
-                        print(f'Detected class name: {detected_class_name}')
-                        print(f'Detected class confidence: {detected_class_confidence}')
+class KatzenschreckApp:
+    """Hauptanwendungsklasse"""
+    
+    def __init__(self):
+        self.args = self._parse_arguments()
+        self.config = Config('../config.txt')
+        self.processor = StreamProcessor(self.config, self.args.output_dir)
+    
+    def _parse_arguments(self):
+        """Parst die Kommandozeilenargumente"""
+        parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
+        parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
+        return parser.parse_args()
+    
+    def run(self):
+        """Startet die Anwendung"""
+        self.processor.run()
 
-                        # Open MQTT connection
-                        mqtt_broker = mqtt.Client()
-                        mqtt_broker.username_pw_set(mqtt_username, mqtt_password)
-                        mqtt_broker.connect(mqtt_broker_url, mqtt_broker_port, 60)
 
-                        # Extend mqtt_topic with detected_class_name
-                        extended_mqtt_topic = f'{mqtt_topic}/{detected_class_name}'
-
-                        # Sende eine MQTT Message an den Broker mqtt_broker mit dem Topic extended_mqtt_topic und der entprechend erkannten class_id und current_date_time im json Format
-                        mqtt_broker.publish(extended_mqtt_topic, f'{{"time": "{current_date_time}", "class": "{detected_class_name}", "confidence": "{detected_class_confidence}"}}')
-
-                        # Close MQTT connection
-                        mqtt_broker.disconnect()
-
-        # Zeige den Stream in einem Fenster an
-        # cv2.imshow('Live Camera Detection', annotated_frame)
-
-        # Drücke 'q', um den Stream zu beenden
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-        # Kamera- und Fenster-Ressourcen freigeben
-        cap.release()
-
-print(f'Frames mit erkannten Objekten sind im Ordner "{output_dir}" gespeichert.')
+def main():
+    """Hauptfunktion"""
+    app = KatzenschreckApp()
+    app.run()
 
 
 if __name__ == "__main__":
-    main() 
+    main()
