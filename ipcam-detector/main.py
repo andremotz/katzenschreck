@@ -8,6 +8,8 @@ import threading
 from results_cleanup import cleanup_results_folder
 from typing import Optional, List, Tuple
 import json
+import mysql.connector
+from mysql.connector import Error
 
 
 class Config:
@@ -35,6 +37,13 @@ class Config:
         self.mqtt_password = config.get('mqtt_password')
         self.confidence_threshold = float(config.get('confidence_threshold', 0.5))
         self.usage_threshold = float(config.get('usage_threshold', 0.8))
+        
+        # Datenbank-Konfiguration
+        self.db_host = config.get('db_host', 'localhost')
+        self.db_user = config.get('db_user', 'katzenschreck_app')
+        self.db_password = config.get('db_password', 'p7eWPjGeIRXtMvCJw--')
+        self.db_database = config.get('db_database', 'katzenschreck')
+        self.camera_name = config.get('camera_name', 'cam_garten')
         
         ignore_zone_str = config.get('ignore_zone')
         if ignore_zone_str:
@@ -107,6 +116,65 @@ class MQTTHandler:
             print(f"MQTT Publish Fehler: {e}")
 
 
+class DatabaseHandler:
+    """Datenbank-Handler für MariaDB-Verbindung"""
+    
+    def __init__(self, config: Config):
+        self.config = config
+    
+    def _get_connection(self):
+        """Erstellt eine neue Datenbankverbindung"""
+        try:
+            connection = mysql.connector.connect(
+                host=self.config.db_host,
+                user=self.config.db_user,
+                password=self.config.db_password,
+                database=self.config.db_database
+            )
+            return connection
+        except Error as e:
+            print(f"Fehler bei der Datenbankverbindung: {e}")
+            return None
+    
+    def save_frame_to_database(self, frame, accuracy: float = 1.0):
+        """Speichert den aktuellen Frame als JPEG in die Datenbank"""
+        connection = self._get_connection()
+        if not connection:
+            return False
+        
+        try:
+            cursor = connection.cursor()
+            
+            # Frame in JPEG-Format konvertieren (im Speicher)
+            success, jpeg_buffer = cv2.imencode('.jpg', frame)
+            if not success:
+                print("Fehler beim Konvertieren des Frames zu JPEG")
+                return False
+            
+            jpeg_data = jpeg_buffer.tobytes()
+            
+            # Insert-Statement ausführen
+            sql = """
+            INSERT INTO detections_images (camera_name, accuracy, blob_jpeg)
+            VALUES (%s, %s, %s)
+            """
+            values = (self.config.camera_name, accuracy, jpeg_data)
+            
+            cursor.execute(sql, values)
+            connection.commit()
+            
+            print(f"Frame erfolgreich in Datenbank gespeichert (Größe: {len(jpeg_data)} Bytes)")
+            cursor.close()
+            connection.close()
+            return True
+            
+        except Error as e:
+            print(f"Fehler beim Speichern in die Datenbank: {e}")
+            if connection:
+                connection.close()
+            return False
+
+
 class ObjectDetector:
     """YOLO-Objekterkennungsklasse"""
     
@@ -162,6 +230,11 @@ class StreamProcessor:
         self.output_dir = output_dir
         self.detector = ObjectDetector()
         self.mqtt_handler = MQTTHandler(config)
+        self.db_handler = DatabaseHandler(config)
+        
+        # Frame-Timing für minutenbasierte Speicherung
+        self.last_frame_save_time = 0
+        self.frame_save_interval = 60  # 60 Sekunden = 1 Minute
         
         # Erstelle Ausgabeverzeichnis
         if not os.path.exists(output_dir):
@@ -172,6 +245,20 @@ class StreamProcessor:
         cleanup_results_folder(self.output_dir, self.config.usage_threshold)
         output_file = f'{self.output_dir}/frame_{timestamp}.jpg'
         cv2.imwrite(output_file, annotated_frame)
+    
+    def _save_frame_to_database_if_needed(self, frame):
+        """Speichert den aktuellen Frame in die Datenbank, wenn eine Minute vergangen ist"""
+        current_time = time.time()
+        
+        if current_time - self.last_frame_save_time >= self.frame_save_interval:
+            self.last_frame_save_time = current_time
+            success = self.db_handler.save_frame_to_database(frame)
+            if success:
+                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                print(f"Frame in Datenbank gespeichert um {timestamp}")
+            return success
+        
+        return False
     
     def _process_detections(self, frame, detections, results):
         """Verarbeitet die Erkennungen"""
@@ -222,6 +309,9 @@ class StreamProcessor:
                 ret, frame = cap.read()
                 if not ret:
                     break
+                
+                # Speichere Frame jede Minute in die Datenbank
+                self._save_frame_to_database_if_needed(frame)
                 
                 # Objekterkennung
                 detections, results = self.detector.detect_objects(frame)

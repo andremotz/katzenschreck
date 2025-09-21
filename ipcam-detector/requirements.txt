@@ -39,3 +39,4 @@ ultralytics-thop==2.0.10
 urllib3==2.2.3
 zipp==3.20.2
 paho-mqtt==2.1.0
+mysql-connector-python==8.2.0
