@@ -232,9 +232,9 @@ class StreamProcessor:
         self.mqtt_handler = MQTTHandler(config)
         self.db_handler = DatabaseHandler(config)
         
-        # Frame-Timing für minutenbasierte Speicherung
+        # Frame-Timing für stündliche Speicherung
         self.last_frame_save_time = 0
-        self.frame_save_interval = 60  # 60 Sekunden = 1 Minute
+        self.frame_save_interval = 3600  # 3600 Sekunden = 1 Stunde
         
         # Erstelle Ausgabeverzeichnis
         if not os.path.exists(output_dir):
@@ -264,7 +264,7 @@ class StreamProcessor:
             return frame
     
     def _save_frame_to_database_if_needed(self, frame):
-        """Speichert den aktuellen Frame in die Datenbank, wenn eine Minute vergangen ist"""
+        """Speichert den aktuellen Frame in die Datenbank, wenn eine Stunde vergangen ist"""
         current_time = time.time()
         
         if current_time - self.last_frame_save_time >= self.frame_save_interval:
@@ -330,7 +330,7 @@ class StreamProcessor:
                 # Frame-Auflösung von 4K auf Full HD reduzieren
                 frame = self._resize_frame_to_fullhd(frame)
                 
-                # Speichere Frame jede Minute in die Datenbank
+                # Speichere Frame jede Stunde in die Datenbank
                 self._save_frame_to_database_if_needed(frame)
                 
                 # Objekterkennung
