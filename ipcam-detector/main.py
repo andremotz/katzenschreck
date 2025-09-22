@@ -246,6 +246,23 @@ class StreamProcessor:
         output_file = f'{self.output_dir}/frame_{timestamp}.jpg'
         cv2.imwrite(output_file, annotated_frame)
     
+    def _resize_frame_to_fullhd(self, frame):
+        """Reduziert die Frame-Auflösung von 4K auf Full HD (1920x1080)"""
+        height, width = frame.shape[:2]
+        
+        # Zielauflösung: Full HD (1920x1080)
+        target_width = 1920
+        target_height = 1080
+        
+        # Nur resizen wenn der Frame größer als Full HD ist
+        if width > target_width or height > target_height:
+            resized_frame = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_AREA)
+            print(f"Frame von {width}x{height} auf {target_width}x{target_height} reduziert")
+            return resized_frame
+        else:
+            # Frame ist bereits Full HD oder kleiner
+            return frame
+    
     def _save_frame_to_database_if_needed(self, frame):
         """Speichert den aktuellen Frame in die Datenbank, wenn eine Minute vergangen ist"""
         current_time = time.time()
@@ -309,6 +326,9 @@ class StreamProcessor:
                 ret, frame = cap.read()
                 if not ret:
                     break
+                
+                # Frame-Auflösung von 4K auf Full HD reduzieren
+                frame = self._resize_frame_to_fullhd(frame)
                 
                 # Speichere Frame jede Minute in die Datenbank
                 self._save_frame_to_database_if_needed(frame)
