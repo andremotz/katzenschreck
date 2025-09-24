@@ -1,13 +1,13 @@
--- SQL-Skript zum Hinzufügen der thumbnail_jpeg Spalte zur bestehenden Tabelle
--- Dieses Skript kann ausgeführt werden, um bestehende Datenbanken zu aktualisieren
+-- SQL script to add the thumbnail_jpeg column to the existing table
+-- This script can be executed to update existing databases
 
 USE katzenschreck;
 
--- Thumbnail-Spalte hinzufügen (falls sie noch nicht existiert)
+-- Add thumbnail column (if it doesn't exist yet)
 ALTER TABLE detections_images 
 ADD COLUMN IF NOT EXISTS thumbnail_jpeg BLOB AFTER blob_jpeg;
 
--- Beispiel-Abfrage mit Thumbnail
+-- Example query with thumbnail
 -- SELECT id, camera_name, accuracy, 
 --        LENGTH(blob_jpeg) as image_size_bytes, 
 --        LENGTH(thumbnail_jpeg) as thumbnail_size_bytes, 

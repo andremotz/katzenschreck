@@ -13,7 +13,7 @@ from mysql.connector import Error
 
 
 class Config:
-    """Konfigurationsklasse für das Katzenschreck-System"""
+    """Configuration class for the cat deterrent system"""
     
     def __init__(self, config_file_path: str):
         self.config_file_path = config_file_path
@@ -21,7 +21,7 @@ class Config:
         self._validate_config()
     
     def _load_config(self):
-        """Lädt die Konfiguration aus der Datei"""
+        """Loads configuration from file"""
         config = {}
         with open(self.config_file_path, 'r') as file:
             for line in file:
@@ -38,7 +38,7 @@ class Config:
         self.confidence_threshold = float(config.get('confidence_threshold', 0.5))
         self.usage_threshold = float(config.get('usage_threshold', 0.8))
         
-        # Datenbank-Konfiguration
+        # Database configuration
         self.db_host = config.get('db_host', 'localhost')
         self.db_user = config.get('db_user', 'katzenschreck_app')
         self.db_password = config.get('db_password', 'p7eWPjGeIRXtMvCJw--')
@@ -52,7 +52,7 @@ class Config:
             self.ignore_zone = None
     
     def _validate_config(self):
-        """Validiert die Konfiguration"""
+        """Validates the configuration"""
         required_fields = [
             ('rtsp_stream_url', self.rtsp_stream_url),
             ('mqtt_broker_url', self.mqtt_broker_url),
@@ -67,7 +67,7 @@ class Config:
 
 
 class MQTTHandler:
-    """MQTT-Handler für die Kommunikation mit dem MQTT-Broker"""
+    """MQTT handler for communication with MQTT broker"""
     
     def __init__(self, config: Config):
         self.config = config
@@ -75,13 +75,13 @@ class MQTTHandler:
         self._start_ping_thread()
     
     def _start_ping_thread(self):
-        """Startet den MQTT-Ping-Thread"""
+        """Starts the MQTT ping thread"""
         self.ping_thread = threading.Thread(target=self._mqtt_ping)
         self.ping_thread.daemon = True
         self.ping_thread.start()
     
     def _mqtt_ping(self):
-        """Sendet alle 30 Sekunden einen Ping an den MQTT-Broker"""
+        """Sends a ping to the MQTT broker every 30 seconds"""
         while True:
             time.sleep(30)
             client = mqtt.Client()
@@ -95,10 +95,10 @@ class MQTTHandler:
                 client.loop_stop()
                 client.disconnect()
             except Exception as e:
-                print(f"MQTT Ping Fehler: {e}")
+                print(f"MQTT Ping Error: {e}")
     
     def publish_detection(self, class_name: str, confidence: float, timestamp: str):
-        """Sendet eine Erkennungs-Nachricht an den MQTT-Broker"""
+        """Sends a detection message to the MQTT broker"""
         client = mqtt.Client()
         client.username_pw_set(self.config.mqtt_username, self.config.mqtt_password)
         
@@ -113,17 +113,17 @@ class MQTTHandler:
             client.publish(extended_topic, message)
             client.disconnect()
         except Exception as e:
-            print(f"MQTT Publish Fehler: {e}")
+            print(f"MQTT Publish Error: {e}")
 
 
 class DatabaseHandler:
-    """Datenbank-Handler für MariaDB-Verbindung"""
+    """Database handler for MariaDB connection"""
     
     def __init__(self, config: Config):
         self.config = config
     
     def _get_connection(self):
-        """Erstellt eine neue Datenbankverbindung"""
+        """Creates a new database connection"""
         try:
             connection = mysql.connector.connect(
                 host=self.config.db_host,
@@ -133,11 +133,11 @@ class DatabaseHandler:
             )
             return connection
         except Error as e:
-            print(f"Fehler bei der Datenbankverbindung: {e}")
+            print(f"Database connection error: {e}")
             return None
     
     def save_frame_to_database(self, frame, accuracy: float = 0.0):
-        """Speichert den aktuellen Frame als JPEG und Thumbnail in die Datenbank"""
+        """Saves the current frame as JPEG and thumbnail to the database"""
         connection = self._get_connection()
         if not connection:
             return False
@@ -145,21 +145,21 @@ class DatabaseHandler:
         try:
             cursor = connection.cursor()
             
-            # Frame in JPEG-Format konvertieren (Original-Auflösung beibehalten)
+            # Convert frame to JPEG format (keeping original resolution)
             success, jpeg_buffer = cv2.imencode('.jpg', frame)
             if not success:
-                print("Fehler beim Konvertieren des Frames zu JPEG")
+                print("Error converting frame to JPEG")
                 return False
             
             jpeg_data = jpeg_buffer.tobytes()
             
-            # Thumbnail mit 300 Pixel Breite erstellen
+            # Create thumbnail with 300 pixel width
             thumbnail_data = self._create_thumbnail(frame, 300)
             if not thumbnail_data:
-                print("Fehler beim Erstellen des Thumbnails")
+                print("Error creating thumbnail")
                 return False
             
-            # Insert-Statement ausführen
+            # Execute insert statement
             sql = """
             INSERT INTO detections_images (camera_name, accuracy, blob_jpeg, thumbnail_jpeg)
             VALUES (%s, %s, %s, %s)
@@ -169,30 +169,30 @@ class DatabaseHandler:
             cursor.execute(sql, values)
             connection.commit()
             
-            print(f"Frame erfolgreich in Datenbank gespeichert (Originalgröße: {len(jpeg_data)} Bytes, Thumbnail: {len(thumbnail_data)} Bytes)")
+            print(f"Frame successfully saved to database (Original size: {len(jpeg_data)} bytes, Thumbnail: {len(thumbnail_data)} bytes)")
             cursor.close()
             connection.close()
             return True
             
         except Error as e:
-            print(f"Fehler beim Speichern in die Datenbank: {e}")
+            print(f"Error saving to database: {e}")
             if connection:
                 connection.close()
             return False
     
     def _create_thumbnail(self, frame, target_width: int):
-        """Erstellt ein Thumbnail mit der angegebenen Breite unter Beibehaltung des Seitenverhältnisses"""
+        """Creates a thumbnail with the specified width while maintaining aspect ratio"""
         try:
             height, width = frame.shape[:2]
             
-            # Berechne neue Höhe basierend auf dem Seitenverhältnis
+            # Calculate new height based on aspect ratio
             aspect_ratio = height / width
             target_height = int(target_width * aspect_ratio)
             
-            # Frame auf Thumbnail-Größe skalieren
+            # Scale frame to thumbnail size
             thumbnail = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_AREA)
             
-            # Thumbnail in JPEG-Format konvertieren
+            # Convert thumbnail to JPEG format
             success, thumbnail_buffer = cv2.imencode('.jpg', thumbnail, [cv2.IMWRITE_JPEG_QUALITY, 85])
             if not success:
                 return None
@@ -200,21 +200,21 @@ class DatabaseHandler:
             return thumbnail_buffer.tobytes()
             
         except Exception as e:
-            print(f"Fehler beim Erstellen des Thumbnails: {e}")
+            print(f"Error creating thumbnail: {e}")
             return None
 
 
 class ObjectDetector:
-    """YOLO-Objekterkennungsklasse"""
+    """YOLO object detection class"""
     
     CLASS_NAMES = {0: 'Person', 15: 'Cat'}
-    TARGET_CLASS_ID = 15  # Katze
+    TARGET_CLASS_ID = 15  # Cat
     
     def __init__(self, model_path: str = 'yolo12l.pt'):
         self.model = YOLO(model_path)
     
     def detect_objects(self, frame) -> Tuple[List[Tuple[int, float, List[float]]], object]:
-        """Erkennt Objekte im Frame und gibt relevante Erkennungen zurück"""
+        """Detects objects in frame and returns relevant detections"""
         results = self.model(frame)
         detections = []
         
@@ -222,7 +222,7 @@ class ObjectDetector:
             for box in result.boxes:
                 class_id = int(box.cls.item())
                 
-                # Nur Katzen erkennen (und keine Personen)
+                # Only detect cats (not persons)
                 if class_id == self.TARGET_CLASS_ID and class_id != 0:
                     confidence = box.conf.item()
                     bbox = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
@@ -231,28 +231,28 @@ class ObjectDetector:
         return detections, results
     
     def is_in_ignore_zone(self, bbox: List[float], frame_shape: Tuple[int, int], ignore_zone: Optional[List[float]]) -> bool:
-        """Prüft, ob die Bounding Box in der Ignore-Zone liegt"""
+        """Checks if the bounding box is in the ignore zone"""
         if not ignore_zone:
             return False
         
         x1, y1, x2, y2 = bbox
         frame_h, frame_w = frame_shape[:2]
         
-        # Box-Koordinaten als Prozentwerte
+        # Box coordinates as percentage values
         box_xmin = x1 / frame_w
         box_ymin = y1 / frame_h
         box_xmax = x2 / frame_w
         box_ymax = y2 / frame_h
         
-        # Ignore-Zone-Koordinaten
+        # Ignore zone coordinates
         iz_xmin, iz_ymin, iz_xmax, iz_ymax = ignore_zone
         
-        # Prüfe, ob sich die Box mit der Ignore-Zone überschneidet
+        # Check if box overlaps with ignore zone
         return not (box_xmax < iz_xmin or box_xmin > iz_xmax or box_ymax < iz_ymin or box_ymin > iz_ymax)
 
 
 class StreamProcessor:
-    """Hauptklasse für die Verarbeitung des Video-Streams"""
+    """Main class for video stream processing"""
     
     def __init__(self, config: Config, output_dir: str):
         self.config = config
@@ -261,39 +261,39 @@ class StreamProcessor:
         self.mqtt_handler = MQTTHandler(config)
         self.db_handler = DatabaseHandler(config)
         
-        # Frame-Timing für stündliche Speicherung
+        # Frame timing for hourly saving
         self.last_frame_save_time = 0
-        self.frame_save_interval = 3600  # 3600 Sekunden = 1 Stunde
+        self.frame_save_interval = 3600  # 3600 seconds = 1 hour
         
-        # Erstelle Ausgabeverzeichnis
+        # Create output directory
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
     
     def _save_detection(self, annotated_frame, timestamp: str):
-        """Speichert das erkannte Frame"""
+        """Saves the detected frame"""
         cleanup_results_folder(self.output_dir, self.config.usage_threshold)
         output_file = f'{self.output_dir}/frame_{timestamp}.jpg'
         cv2.imwrite(output_file, annotated_frame)
     
     def _resize_frame_to_fullhd(self, frame):
-        """Reduziert die Frame-Auflösung von 4K auf Full HD (1920x1080)"""
+        """Reduces frame resolution from 4K to Full HD (1920x1080)"""
         height, width = frame.shape[:2]
         
-        # Zielauflösung: Full HD (1920x1080)
+        # Target resolution: Full HD (1920x1080)
         target_width = 1920
         target_height = 1080
         
-        # Nur resizen wenn der Frame größer als Full HD ist
+        # Only resize if frame is larger than Full HD
         if width > target_width or height > target_height:
             resized_frame = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_AREA)
-            print(f"Frame von {width}x{height} auf {target_width}x{target_height} reduziert")
+            print(f"Frame resized from {width}x{height} to {target_width}x{target_height}")
             return resized_frame
         else:
-            # Frame ist bereits Full HD oder kleiner
+            # Frame is already Full HD or smaller
             return frame
     
     def _save_frame_to_database_if_needed(self, frame):
-        """Speichert den aktuellen Frame in die Datenbank, wenn eine Stunde vergangen ist"""
+        """Saves the current frame to database if one hour has passed"""
         current_time = time.time()
         
         if current_time - self.last_frame_save_time >= self.frame_save_interval:
@@ -301,20 +301,20 @@ class StreamProcessor:
             success = self.db_handler.save_frame_to_database(frame)
             if success:
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-                print(f"Frame in Datenbank gespeichert um {timestamp}")
+                print(f"Frame saved to database at {timestamp}")
             return success
         
         return False
     
     def _process_detections(self, frame, detections, results):
-        """Verarbeitet die Erkennungen"""
+        """Processes the detections"""
         for class_id, confidence, bbox in detections:
             if confidence > self.config.confidence_threshold:
-                # Prüfe Ignore-Zone
+                # Check ignore zone
                 if self.detector.is_in_ignore_zone(bbox, frame.shape, self.config.ignore_zone):
                     continue
                 
-                # Annotiere Frame
+                # Annotate frame
                 annotated_frame = None
                 for result in results:
                     annotated_frame = result.plot()
@@ -323,71 +323,71 @@ class StreamProcessor:
                 if annotated_frame is None:
                     continue
                 
-                # Zeitstempel generieren
+                # Generate timestamp
                 timestamp = time.strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]
                 
-                # Frame speichern
+                # Save frame
                 self._save_detection(annotated_frame, timestamp)
                 
-                # Detektionsbild in Datenbank speichern
+                # Save detection image to database
                 success = self.db_handler.save_frame_to_database(annotated_frame, confidence)
                 if success:
-                    print(f"Detektionsbild in Datenbank gespeichert (Confidence: {confidence:.2f})")
+                    print(f"Detection image saved to database (Confidence: {confidence:.2f})")
                 else:
-                    print("Fehler beim Speichern des Detektionsbildes in die Datenbank")
+                    print("Error saving detection image to database")
                 
-                # Informationen ausgeben
+                # Output information
                 class_name = self.detector.CLASS_NAMES.get(class_id, "Unknown")
                 print(f'Detected class ID: {class_id}')
                 print(f'Detected class name: {class_name}')
                 print(f'Detected class confidence: {confidence}')
                 
-                # MQTT-Nachricht senden
+                # Send MQTT message
                 self.mqtt_handler.publish_detection(class_name, confidence, timestamp)
     
     def run(self):
-        """Hauptschleife für die Stream-Verarbeitung"""
+        """Main loop for stream processing"""
         while True:
             cap = cv2.VideoCapture(self.config.rtsp_stream_url)
             
             if not cap.isOpened():
-                print(f"Fehler beim Öffnen des RTSP-Streams: {self.config.rtsp_stream_url}. Versuche erneut in 5 Sekunden...")
+                print(f"Error opening RTSP stream: {self.config.rtsp_stream_url}. Retrying in 5 seconds...")
                 time.sleep(5)
                 continue
             
-            print("Verbindung zum RTSP-Stream erfolgreich aufgebaut.")
+            print("RTSP stream connection established successfully.")
             
-            # Verarbeite Frames
+            # Process frames
             while cap.isOpened():
                 ret, frame = cap.read()
                 if not ret:
                     break
                 
-                # Frame-Auflösung von 4K auf Full HD reduzieren
+                # Reduce frame resolution from 4K to Full HD
                 frame = self._resize_frame_to_fullhd(frame)
                 
-                # Speichere Frame jede Stunde in die Datenbank
+                # Save frame to database every hour
                 self._save_frame_to_database_if_needed(frame)
                 
-                # Objekterkennung
+                # Object detection
                 detections, results = self.detector.detect_objects(frame)
                 
-                # Verarbeite Erkennungen
+                # Process detections
                 if detections:
                     self._process_detections(frame, detections, results)
                 
-                # Beende bei 'q'
+                # Exit on 'q'
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     cap.release()
                     return
             
             cap.release()
         
-        print(f'Frames mit erkannten Objekten sind im Ordner "{self.output_dir}" gespeichert.')
+        print(f'Frames with detected objects are saved in folder "{self.output_dir}".')
 
 
 class KatzenschreckApp:
-    """Hauptanwendungsklasse"""
+    """Main application class"""
     
     def __init__(self):
         self.args = self._parse_arguments()
@@ -395,18 +395,18 @@ class KatzenschreckApp:
         self.processor = StreamProcessor(self.config, self.args.output_dir)
     
     def _parse_arguments(self):
-        """Parst die Kommandozeilenargumente"""
-        parser = argparse.ArgumentParser(description="RTSP-Stream verarbeiten und erkannte Frames speichern.")
-        parser.add_argument("output_dir", type=str, help="Der Ordner, in dem die erkannten Frames gespeichert werden.")
+        """Parses command line arguments"""
+        parser = argparse.ArgumentParser(description="Process RTSP stream and save detected frames.")
+        parser.add_argument("output_dir", type=str, help="The folder where detected frames will be saved.")
         return parser.parse_args()
     
     def run(self):
-        """Startet die Anwendung"""
+        """Starts the application"""
         self.processor.run()
 
 
 def main():
-    """Hauptfunktion"""
+    """Main function"""
     app = KatzenschreckApp()
     app.run()
 

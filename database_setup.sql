@@ -1,16 +1,16 @@
--- SQL-Skript zur Erstellung der benötigten Tabelle für das Katzenschreck-System
+-- SQL script for creating the required table for the cat deterrent system
 -- MariaDB/MySQL
 
--- Datenbank erstellen (falls nicht vorhanden)
+-- Create database (if not exists)
 CREATE DATABASE IF NOT EXISTS katzenschreck;
 USE katzenschreck;
 
--- Benutzer erstellen (falls nicht vorhanden)
+-- Create user (if not exists)
 CREATE USER IF NOT EXISTS 'katzenschreck_app'@'localhost' IDENTIFIED BY 'p7eWPjGeIRXtMvCJw--';
 GRANT ALL PRIVILEGES ON katzenschreck.* TO 'katzenschreck_app'@'localhost';
 FLUSH PRIVILEGES;
 
--- Tabelle für Frame-Bilder erstellen
+-- Create table for frame images
 CREATE TABLE IF NOT EXISTS detections_images (
     id INT AUTO_INCREMENT PRIMARY KEY,
     camera_name VARCHAR(100) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS detections_images (
     INDEX idx_created_at (created_at)
 );
 
--- Beispiel-Abfrage zum Testen
+-- Example query for testing
 -- SELECT id, camera_name, accuracy, 
 --        LENGTH(blob_jpeg) as image_size_bytes, 
 --        LENGTH(thumbnail_jpeg) as thumbnail_size_bytes, 
