@@ -1,8 +1,40 @@
 FROM python:3.10
+
+# Set working directory
 WORKDIR /app
-COPY ipcam-detector/requirements.txt .
+
+# Install system dependencies for OpenCV and MariaDB
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libmariadb-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY cat-detector/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY ipcam-detector/main.py .
+
+# Copy all application files and modules
+COPY cat-detector/ ./cat-detector/
+COPY config.txt.example .
+COPY database_setup.sql .
+
+# Create output directory
+RUN mkdir -p /app/results
+
+# Set executable permissions for start script if needed
+# Note: start_script.sh is not included as it's meant for host setup
+
+# Set default working directory to cat-detector
+WORKDIR /app/cat-detector
+
+# Create config.txt from example if it doesn't exist
+RUN if [ ! -f ../config.txt ]; then cp ../config.txt.example ../config.txt; fi
 
 ENTRYPOINT ["python", "main.py"]
-CMD ["<RTSP-Stream-URL>", "<Output-Folder>"]
+CMD ["/app/results"]

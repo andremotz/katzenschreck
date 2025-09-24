@@ -1,26 +1,26 @@
-# Konfigurationsdatei für das Katzenschreck-System
-# Kopiere diese Datei zu config.txt und passe die Werte an
+# Configuration file for the Katzenschreck system
+# Copy this file to config.txt and adjust the values
 
-# RTSP-Stream Konfiguration
+# RTSP Stream Configuration
 rtsp_stream_url=rtsp://username:password@ip:port/path
 
-# MQTT Broker Konfiguration  
-mqtt_broker_url=your-mqtt-broker.com
+# MQTT Broker Configuration  
+mqtt_broker_url=<your-mqtt-broker.com>
 mqtt_broker_port=1883
 mqtt_topic=katzenschreck
-mqtt_username=your_mqtt_username
-mqtt_password=your_mqtt_password
+mqtt_username=<your_mqtt_username>
+mqtt_password=<your_mqtt_password>
 
-# Objekterkennung Konfiguration
+# Object Detection Configuration
 confidence_threshold=0.5
 usage_threshold=0.8
 
-# Ignore Zone (optional) - Koordinaten als Dezimalwerte (0.0-1.0): x_min,y_min,x_max,y_max
+# Ignore Zone (optional) - Coordinates as decimal values (0.0-1.0): x_min,y_min,x_max,y_max
 # ignore_zone=0.1,0.1,0.3,0.3
 
-# Datenbank Konfiguration (MariaDB/MySQL)
-db_host=localhost
-db_user=katzenschreck_app
-db_password=123
+# Database Configuration (MariaDB/MySQL)
+db_host=<localhost>
+db_user=<katzenschreck_app>
+db_password=<123>
 db_database=katzenschreck
 camera_name=cam_teich

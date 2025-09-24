@@ -1,55 +1,153 @@
-# Katzenschreck - IP-Kamera Objekterkennung
+# Katzenschreck
 
-Ein System zur automatischen Erkennung von Katzen in IP-Kamera-Streams mit YOLO und Speicherung in MariaDB.
+A containerized end-to-end monitoring system that uses YOLO object detection to identify cats from ip-camera streams, stores results in a database, and sends real-time alerts via MQTT. This might be used to trigger your sprinkler...
+
+![Katzenschreck Detection Example](photos/PHOTO-2025-09-24-11-28-54.jpg)
 
 ## Features
 
-- **Objekterkennung**: Automatische Erkennung von Katzen mit YOLO
-- **MQTT-Integration**: Senden von Benachrichtigungen bei Erkennungen
-- **Datenbank-Speicherung**: Automatische Speicherung von Frames jede Minute in MariaDB
-- **RTSP-Stream Support**: Unterstützung für IP-Kameras mit RTSP-Protokoll
-- **Ignore-Zonen**: Konfigurierbare Bereiche, die ignoriert werden
+- **Object Detection**: Automatic cat detection using YOLO
+- **MQTT Integration**: Send notifications when detections occur
+- **Database Storage**: Automatic frame storage every hour and detection images in MariaDB
+- **RTSP Stream Support**: Support for IP cameras with RTSP protocol
+- **Ignore Zones**: Configurable areas to be ignored
+- **Image Generation**: Automatic creation of 300px wide thumbnails & detection-images.
 
-## Installation
+## Installation & Setup
 
-1. Abhängigkeiten installieren:
+Follow these steps in order:
+
+### 1. Set up database
+First, create the database and required tables. Adjust the script to your needs:
 ```bash
-cd ipcam-detector
-pip install -r requirements.txt
+mysql -u root -p < database_setup.sql
 ```
 
-2. Datenbank einrichten:
-```bash
-mysql -u root -p < ../database_setup.sql
-```
-
-3. Konfiguration erstellen:
+### 2. Configure the system
+Create and edit the configuration file:
 ```bash
 cp config.txt.example config.txt
-# Konfigurationsdatei anpassen
+# Edit config.txt with your RTSP stream, MQTT broker, and database settings
 ```
 
-## Verwendung
+### 3. Run the application
+
+Choose one of the following deployment methods:
+
+#### Option A: Native Execution (Recommended for Development)
+Use the start script to automatically set up the environment and run the system natively:
+```bash
+./start_script.sh
+```
+
+**Note**: The start script will automatically:
+- Create a Python virtual environment in `cat-detector/venv/`
+- Install all required dependencies from `requirements.txt`
+- Activate the virtual environment
+- Run the detection system
+
+#### Option B: Docker Container (Recommended for Production)
+Build and run the application in a Docker container:
 
 ```bash
-python ipcam-detector/main.py <output_folder>
+# Build the Docker image
+docker build -t katzenschreck .
+
+# Run the container with volume mounts for config and output
+docker run -d \
+  --name katzenschreck-container \
+  -v $(pwd)/config.txt:/app/config.txt:ro \
+  -v $(pwd)/results:/app/results \
+  katzenschreck
 ```
 
-Die Konfiguration erfolgt über die `config.txt` Datei im Hauptverzeichnis.
+**Docker Benefits**:
+- Isolated environment with all dependencies
+- Consistent deployment across different systems
+- Easy scaling and orchestration
+- No need to manage Python environments locally
 
-## Konfiguration
+## Manual Usage
 
-Die `config.txt` sollte folgende Parameter enthalten:
+If you prefer to run manually without automation:
 
-- **RTSP-Stream**: `rtsp_stream_url`
+```bash
+cd cat-detector
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py <output_folder>
+```
+
+## Configuration
+
+The `config.txt` should contain the following parameters:
+
+- **RTSP Stream**: `rtsp_stream_url`
 - **MQTT**: `mqtt_broker_url`, `mqtt_topic`, etc.
-- **Datenbank**: `db_host`, `db_user`, `db_password`, `db_database`
-- **Objekterkennung**: `confidence_threshold`, `ignore_zone`
+- **Database**: `db_host`, `db_user`, `db_password`, `db_database`
+- **Object Detection**: `confidence_threshold`, `ignore_zone`
 
-## Datenbank-Schema
+## Database Schema
 
-Das System speichert jede Minute automatisch einen Frame in der `detections_images` Tabelle:
-- `camera_name`: Name der Kamera
-- `accuracy`: Genauigkeitswert (Standard: 1.0)
-- `blob_jpeg`: JPEG-Bilddaten als BLOB
-- `created_at`: Zeitstempel der Speicherung
+The system automatically stores frames in the `detections_images` table:
+- `camera_name`: Camera name
+- `accuracy`: Accuracy value (0.0 for monitoring images, >0.0 for detections)
+- `blob_jpeg`: JPEG image data as BLOB
+- `thumbnail_jpeg`: 300px wide thumbnail as BLOB
+- `created_at`: Storage timestamp
+
+## Module Structure
+
+The application is organized into modular components:
+
+- **`config.py`**: Configuration management
+- **`mqtt_handler.py`**: MQTT communication
+- **`database_handler.py`**: Database operations and thumbnail creation
+- **`object_detector.py`**: YOLO-based cat detection
+- **`stream_processor.py`**: Video stream processing coordination
+- **`main.py`**: Application entry point
+
+## Detection Logic
+
+- **Monitoring Images**: Saved every hour with accuracy = 0.0
+- **Detection Images**: Saved when cats are detected with accuracy = YOLO confidence
+- **File Storage**: Detection images also saved as annotated files in output folder
+- **MQTT Notifications**: Real-time alerts sent for each detection
+
+## TODO
+
+### DevOps & Infrastructure
+- [ ] Verify Docker container functionality
+- [ ] Set up CI/CD pipeline (GitHub Actions/GitLab CI)
+- [ ] Add Docker Compose for multi-service setup (app + database)
+- [ ] Implement health checks and monitoring endpoints
+- [ ] Add Prometheus metrics collection
+- [ ] Set up log aggregation (ELK stack or similar)
+- [ ] Create Kubernetes deployment manifests
+- [ ] Add environment-specific configurations (dev/staging/prod)
+
+### Code Quality & Testing
+- [ ] Add unit tests for all modules
+- [ ] Implement integration tests
+- [ ] Set up code coverage reporting
+- [ ] Add linting and formatting (black, flake8, mypy)
+- [ ] Create pre-commit hooks
+- [ ] Add security scanning (bandit, safety)
+- [ ] Implement automated dependency updates (Dependabot)
+
+### Documentation & Usability
+- [ ] Create architecture diagrams
+- [ ] Add troubleshooting guide
+- [ ] Document performance tuning recommendations
+- [ ] Create video/GIF demo
+- [ ] Add changelog maintenance
+
+### Security & Production Readiness
+- [ ] Implement proper secret management
+- [ ] Add SSL/TLS support for MQTT
+- [ ] Set up database connection pooling
+- [ ] Add rate limiting and resource management
+- [ ] Implement graceful shutdown handling
+- [ ] Add backup and recovery procedures
+- [ ] Security audit and vulnerability assessment
