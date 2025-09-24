@@ -7,8 +7,8 @@ git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
 # Remove config.txt from index
 git rm --cached config.txt
 
-# Repository directory, which is the same as this script's directory + /cat-detector
-REPO_DIR=$(pwd)/cat-detector
+# Repository directory, which is the same as this script's directory + /cat_detector
+REPO_DIR=$(pwd)/cat_detector
 
 # Virtual environment directory
 # Set VENV_DIR based on REPO_DIR

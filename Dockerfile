@@ -16,11 +16,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
-COPY cat-detector/requirements.txt .
+COPY cat_detector/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy all application files and modules
-COPY cat-detector/ ./cat-detector/
+COPY cat_detector/ ./cat_detector/
 COPY config.txt.example .
 COPY database_setup.sql .
 
@@ -30,8 +30,8 @@ RUN mkdir -p /app/results
 # Set executable permissions for start script if needed
 # Note: start_script.sh is not included as it's meant for host setup
 
-# Set default working directory to cat-detector
-WORKDIR /app/cat-detector
+# Set default working directory to cat_detector
+WORKDIR /app/cat_detector
 
 # Create config.txt from example if it doesn't exist
 RUN if [ ! -f ../config.txt ]; then cp ../config.txt.example ../config.txt; fi

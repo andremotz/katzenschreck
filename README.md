@@ -41,7 +41,7 @@ Use the start script to automatically set up the environment and run the system 
 ```
 
 **Note**: The start script will automatically:
-- Create a Python virtual environment in `cat-detector/venv/`
+- Create a Python virtual environment in `cat_detector/venv/`
 - Install all required dependencies from `requirements.txt`
 - Activate the virtual environment
 - Run the detection system
@@ -72,7 +72,7 @@ docker run -d \
 If you prefer to run manually without automation:
 
 ```bash
-cd cat-detector
+cd cat_detector
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
