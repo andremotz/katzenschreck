@@ -137,7 +137,7 @@ class DatabaseHandler:
             return None
     
     def save_frame_to_database(self, frame, accuracy: float = 1.0):
-        """Speichert den aktuellen Frame als JPEG in die Datenbank"""
+        """Speichert den aktuellen Frame als JPEG und Thumbnail in die Datenbank"""
         connection = self._get_connection()
         if not connection:
             return False
@@ -153,17 +153,23 @@ class DatabaseHandler:
             
             jpeg_data = jpeg_buffer.tobytes()
             
+            # Thumbnail mit 300 Pixel Breite erstellen
+            thumbnail_data = self._create_thumbnail(frame, 300)
+            if not thumbnail_data:
+                print("Fehler beim Erstellen des Thumbnails")
+                return False
+            
             # Insert-Statement ausführen
             sql = """
-            INSERT INTO detections_images (camera_name, accuracy, blob_jpeg)
-            VALUES (%s, %s, %s)
+            INSERT INTO detections_images (camera_name, accuracy, blob_jpeg, thumbnail_jpeg)
+            VALUES (%s, %s, %s, %s)
             """
-            values = (self.config.camera_name, accuracy, jpeg_data)
+            values = (self.config.camera_name, accuracy, jpeg_data, thumbnail_data)
             
             cursor.execute(sql, values)
             connection.commit()
             
-            print(f"Frame erfolgreich in Datenbank gespeichert (Größe: {len(jpeg_data)} Bytes)")
+            print(f"Frame erfolgreich in Datenbank gespeichert (Originalgröße: {len(jpeg_data)} Bytes, Thumbnail: {len(thumbnail_data)} Bytes)")
             cursor.close()
             connection.close()
             return True
@@ -173,6 +179,29 @@ class DatabaseHandler:
             if connection:
                 connection.close()
             return False
+    
+    def _create_thumbnail(self, frame, target_width: int):
+        """Erstellt ein Thumbnail mit der angegebenen Breite unter Beibehaltung des Seitenverhältnisses"""
+        try:
+            height, width = frame.shape[:2]
+            
+            # Berechne neue Höhe basierend auf dem Seitenverhältnis
+            aspect_ratio = height / width
+            target_height = int(target_width * aspect_ratio)
+            
+            # Frame auf Thumbnail-Größe skalieren
+            thumbnail = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_AREA)
+            
+            # Thumbnail in JPEG-Format konvertieren
+            success, thumbnail_buffer = cv2.imencode('.jpg', thumbnail, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            if not success:
+                return None
+            
+            return thumbnail_buffer.tobytes()
+            
+        except Exception as e:
+            print(f"Fehler beim Erstellen des Thumbnails: {e}")
+            return None
 
 
 class ObjectDetector:
@@ -299,6 +328,13 @@ class StreamProcessor:
                 
                 # Frame speichern
                 self._save_detection(annotated_frame, timestamp)
+                
+                # Detektionsbild in Datenbank speichern
+                success = self.db_handler.save_frame_to_database(annotated_frame, confidence)
+                if success:
+                    print(f"Detektionsbild in Datenbank gespeichert (Confidence: {confidence:.2f})")
+                else:
+                    print("Fehler beim Speichern des Detektionsbildes in die Datenbank")
                 
                 # Informationen ausgeben
                 class_name = self.detector.CLASS_NAMES.get(class_id, "Unknown")
