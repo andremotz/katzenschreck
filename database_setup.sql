@@ -6,8 +6,8 @@ CREATE DATABASE IF NOT EXISTS katzenschreck;
 USE katzenschreck;
 
 -- Create user (if not exists)
-CREATE USER IF NOT EXISTS 'katzenschreck_app'@'localhost' IDENTIFIED BY 'p7eWPjGeIRXtMvCJw--';
-GRANT ALL PRIVILEGES ON katzenschreck.* TO 'katzenschreck_app'@'localhost';
+CREATE USER IF NOT EXISTS 'katzenschreck_app'@'%' IDENTIFIED BY '<password>';
+GRANT ALL PRIVILEGES ON katzenschreck.* TO 'katzenschreck_app'@'%';
 FLUSH PRIVILEGES;
 
 -- Create table for frame images
