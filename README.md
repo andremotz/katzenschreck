@@ -79,6 +79,71 @@ pip install -r requirements.txt
 python main.py <output_folder>
 ```
 
+## Architecture
+
+### System Overview
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   IP Camera     │    │  Katzenschreck  │    │   MariaDB       │    │  Schreckmonitor │
+│  (RTSP Stream)  │───▶│     System      │───▶│   Database      │───▶│   Desktop-App   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │  MQTT Broker    │
+                       │  (Notifications)│
+                       └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │  Smart Home     │
+                       │  Integration    │
+                       │ (Sprinkler etc.)│
+                       └─────────────────┘
+```
+
+### Detailed Architecture
+```mermaid
+graph TB
+    Camera[IP Camera<br/>RTSP Stream]
+    
+    subgraph "Katzenschreck Application"
+        Main[main.py<br/>Entry Point]
+        Config[config.py<br/>Configuration]
+        
+        subgraph "Processing Pipeline"
+            Stream[stream_processor.py<br/>Main Loop]
+            Detector[object_detector.py<br/>YOLO Detection]
+            DB[database_handler.py<br/>Database Ops]
+            MQTT[mqtt_handler.py<br/>MQTT Comm]
+        end
+    end
+    
+    subgraph "Data Storage"
+        MariaDB[(MariaDB<br/>Images & Metadata)]
+        FileSystem[File System<br/>Detection Images]
+    end
+    
+    MQTTBroker[MQTT Broker]
+    SmartHome[Smart Home Systems]
+    
+    Camera -->|RTSP| Stream
+    Main --> Config
+    Main --> Stream
+    Stream --> Detector
+    Stream --> DB
+    Stream --> MQTT
+    Stream --> FileSystem
+    Config -.-> Stream
+    Config -.-> DB
+    Config -.-> MQTT
+    DB --> MariaDB
+    MQTT --> MQTTBroker
+    MQTTBroker --> SmartHome
+```
+
+> 📋 **Detailed Architecture**: See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive system documentation, deployment options, and integration details.
+
 ## Configuration
 
 The `config.txt` should contain the following parameters:
