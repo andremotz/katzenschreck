@@ -136,7 +136,7 @@ class DatabaseHandler:
             print(f"Fehler bei der Datenbankverbindung: {e}")
             return None
     
-    def save_frame_to_database(self, frame, accuracy: float = 1.0):
+    def save_frame_to_database(self, frame, accuracy: float = 0.0):
         """Speichert den aktuellen Frame als JPEG und Thumbnail in die Datenbank"""
         connection = self._get_connection()
         if not connection:
