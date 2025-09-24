@@ -1,7 +1,7 @@
 """Configuration management for the cat deterrent system"""
 
 
-class Config:  # pylint: disable=too-few-public-methods
+class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Configuration class for the cat deterrent system"""
 
     def __init__(self, config_file_path: str):

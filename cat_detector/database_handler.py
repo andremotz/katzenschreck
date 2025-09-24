@@ -6,7 +6,7 @@ from mysql.connector import Error
 from .config import Config
 
 
-class DatabaseHandler:
+class DatabaseHandler:  # pylint: disable=too-few-public-methods
     """Database handler for MariaDB connection"""
 
     def __init__(self, config: Config):
