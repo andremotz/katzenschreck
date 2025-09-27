@@ -3,7 +3,13 @@
 import cv2
 import mysql.connector
 from mysql.connector import Error
-from .config import Config
+import sys
+import os
+
+# Add the parent directory to the Python path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cat_detector.config import Config
 
 
 class DatabaseHandler:  # pylint: disable=too-few-public-methods

@@ -38,7 +38,9 @@ else
 fi
 
 # Run the Python script with global variables RTSP_STREAM_URL and OUTPUT_DIR
-python3 main.py $REPO_DIR/results
+# Change to parent directory to run as module
+cd ..
+python3 -m cat_detector.main $REPO_DIR/results
 
 # Deactivate virtual environment (optional, when process ends)
 deactivate

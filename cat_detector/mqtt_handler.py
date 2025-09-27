@@ -4,7 +4,13 @@ import time
 import json
 import threading
 import paho.mqtt.client as mqtt
-from .config import Config
+import sys
+import os
+
+# Add the parent directory to the Python path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cat_detector.config import Config
 
 
 class MQTTHandler:  # pylint: disable=too-few-public-methods

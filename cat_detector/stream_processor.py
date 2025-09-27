@@ -3,11 +3,16 @@
 import os
 import time
 import cv2
-from .config import Config
-from .object_detector import ObjectDetector
-from .mqtt_handler import MQTTHandler
-from .database_handler import DatabaseHandler
-from .results_cleanup import cleanup_results_folder
+import sys
+
+# Add the parent directory to the Python path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cat_detector.config import Config
+from cat_detector.object_detector import ObjectDetector
+from cat_detector.mqtt_handler import MQTTHandler
+from cat_detector.database_handler import DatabaseHandler
+from cat_detector.results_cleanup import cleanup_results_folder
 
 
 class StreamProcessor:  # pylint: disable=too-few-public-methods

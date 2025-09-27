@@ -1,8 +1,14 @@
 """Main application entry point for the cat deterrent system"""
 
 import argparse
-from .config import Config
-from .stream_processor import StreamProcessor
+import sys
+import os
+
+# Add the parent directory to the Python path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cat_detector.config import Config
+from cat_detector.stream_processor import StreamProcessor
 
 
 class KatzenschreckApp:  # pylint: disable=too-few-public-methods
