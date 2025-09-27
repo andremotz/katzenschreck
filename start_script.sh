@@ -2,7 +2,7 @@
 
 # Get the latest changes
 git config --global credential.helper store
-git pull https://andremotz@gitlab.prometheus-it.art/andre/animal_detector.git
+git pull https://github.com/andremotz/katzenschreck.git
 
 # Remove config.txt from index
 git rm --cached config.txt
