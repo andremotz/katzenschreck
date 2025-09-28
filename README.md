@@ -1,6 +1,6 @@
-# Katzenschreck
+# Katzenschreck-FCATS
 
-A containerized end-to-end monitoring system that uses YOLO object detection to identify cats from ip-camera streams, stores results in a database, and sends real-time alerts via MQTT. This might be used to trigger your sprinkler...
+(a) Fully Configurable Automated Tracking Software: A containerized end-to-end monitoring system that uses YOLO object detection to identify cats from ip-camera streams, stores results in a database, and sends real-time alerts via MQTT. This might be used to trigger your sprinkler...
 
 **Tested and running 24/7 on Raspberry Pi 3 and 4** by the author, providing reliable cat detection in real-world garden environments.
 
