@@ -10,7 +10,7 @@ class ObjectDetector:
     CLASS_NAMES = {0: 'Person', 15: 'Cat'}
     TARGET_CLASS_ID = 15  # Cat
 
-    def __init__(self, model_path: str = 'yolo12l.pt'):
+    def __init__(self, model_path: str = 'yolo12x.pt'):
         self.model = YOLO(model_path)
 
     def detect_objects(self, frame) -> Tuple[List[Tuple[int, float, List[float]]],
