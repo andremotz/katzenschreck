@@ -1,99 +1,99 @@
 # Katzenschreck - Jetson Xavier NX Setup
 
-Dieses Setup ist optimiert für das NVIDIA Jetson Xavier NX Developer Kit mit Python 3.8.10.
+This setup is optimized for the NVIDIA Jetson Xavier NX Developer Kit with Python 3.8.10.
 
-## Hardware-Anforderungen
+## Hardware Requirements
 
 - NVIDIA Jetson Xavier NX Developer Kit
-- Mindestens 8GB RAM (empfohlen: 16GB)
-- MicroSD-Karte mit mindestens 32GB Speicher
-- Kamera (USB oder CSI)
+- Minimum 8GB RAM (recommended: 16GB)
+- MicroSD card with at least 32GB storage
+- Camera (USB or CSI)
 
 ## Installation
 
-### 1. System vorbereiten
+### 1. Prepare System
 
 ```bash
-# System aktualisieren
+# Update system
 sudo apt update && sudo apt upgrade -y
 
-# Zusätzliche Pakete installieren
+# Install additional packages
 sudo apt install -y python3-pip python3-dev python3-venv git
 ```
 
-### 2. Projekt installieren
+### 2. Install Project
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone <repository-url>
 cd katzenschreck
 
-# Branch wechseln
+# Switch branch
 git checkout feature_yolov8xjetson
 
-# Installation ausführen
+# Run installation
 cd cat_detector
 chmod +x install_jetson.sh
 ./install_jetson.sh
 ```
 
-### 3. Virtual Environment aktivieren
+### 3. Activate Virtual Environment
 
 ```bash
 source venv/bin/activate
 ```
 
-## YOLOv8x Modell
+## YOLOv8x Model
 
-Das Script verwendet standardmäßig YOLOv8x, welches:
-- Höchste Genauigkeit bietet
-- Mehr Rechenleistung benötigt
-- Gut für den Jetson Xavier NX geeignet ist
+The script uses YOLOv8x by default, which:
+- Provides highest accuracy
+- Requires more computational power
+- Is well-suited for Jetson Xavier NX
 
-### Modell-Download
+### Model Download
 
-Das YOLOv8x-Modell wird automatisch beim ersten Start heruntergeladen (~130MB).
+The YOLOv8x model is automatically downloaded on first startup (~130MB).
 
-## Performance-Optimierungen für Jetson
+## Performance Optimizations for Jetson
 
-### 1. GPU-Modus aktivieren
+### 1. Enable GPU Mode
 
 ```bash
-# Jetson-Clocks für maximale Performance
+# Jetson clocks for maximum performance
 sudo jetson_clocks
 ```
 
-### 2. Power-Modus setzen
+### 2. Set Power Mode
 
 ```bash
-# Für maximale Performance (mehr Stromverbrauch)
+# For maximum performance (higher power consumption)
 sudo nvpmodel -m 0
 sudo jetson_clocks
 ```
 
-### 3. Memory-Management
+### 3. Memory Management
 
 ```bash
-# Swap-Speicher erhöhen (falls nötig)
+# Increase swap memory (if needed)
 sudo fallocate -l 4G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 ```
 
-## Konfiguration
+## Configuration
 
-Die Konfiguration erfolgt über die `config.txt` Datei. Wichtige Einstellungen für den Jetson:
+Configuration is done via the `config.txt` file. Important settings for Jetson:
 
 ```ini
-# YOLO-Modell
+# YOLO model
 model_path=yolov8x.pt
 
-# Performance-Einstellungen
+# Performance settings
 confidence_threshold=0.5
 nms_threshold=0.4
 
-# Kamera-Einstellungen
+# Camera settings
 camera_width=1280
 camera_height=720
 fps=15
@@ -101,36 +101,36 @@ fps=15
 
 ## Troubleshooting
 
-### CUDA-Fehler
-Falls CUDA-Fehler auftreten:
+### CUDA Errors
+If CUDA errors occur:
 ```bash
-# CUDA-Version prüfen
+# Check CUDA version
 nvcc --version
 
-# PyTorch CUDA-Support testen
+# Test PyTorch CUDA support
 python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
-### Speicher-Probleme
-Bei Speicher-Problemen:
-- Kleinere Auflösung verwenden
-- YOLOv8n oder YOLOv8s statt YOLOv8x
-- Swap-Speicher erhöhen
+### Memory Issues
+For memory problems:
+- Use smaller resolution
+- Use YOLOv8n or YOLOv8s instead of YOLOv8x
+- Increase swap memory
 
-### Performance-Probleme
-- `jetson_clocks` ausführen
-- Power-Modus auf Maximum setzen
-- Andere Anwendungen schließen
+### Performance Issues
+- Run `jetson_clocks`
+- Set power mode to maximum
+- Close other applications
 
 ## Monitoring
 
 ```bash
-# GPU-Nutzung überwachen
+# Monitor GPU usage
 tegrastats
 
-# Speicher-Nutzung prüfen
+# Check memory usage
 free -h
 
-# CPU-Temperatur
+# CPU temperature
 cat /sys/class/thermal/thermal_zone*/temp
 ```
