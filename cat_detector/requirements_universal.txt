@@ -1,0 +1,33 @@
+# Universal requirements for both Raspberry Pi and Jetson devices
+# This file provides maximum compatibility across different hardware platforms
+
+# Core dependencies (compatible with both platforms)
+numpy>=1.21.0,<2.0.0
+opencv-python>=4.5.0,<5.0.0
+pillow>=8.0.0,<11.0.0
+
+# YOLO and ultralytics (universal compatibility)
+ultralytics>=8.0.0,<9.0.0
+
+# PyTorch - will be auto-selected based on platform
+# For Jetson: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu117
+# For Raspberry Pi: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch>=1.12.0,<2.0.0
+torchvision>=0.13.0,<1.0.0
+
+# Additional dependencies for YOLO
+matplotlib>=3.5.0,<4.0.0
+pandas>=1.3.0,<3.0.0
+pyyaml>=6.0,<7.0
+tqdm>=4.60.0,<5.0.0
+requests>=2.25.0,<3.0.0
+scipy>=1.7.0,<2.0.0
+
+# MQTT and Database
+paho-mqtt>=1.6.0,<2.0.0
+mysql-connector-python>=8.0.0,<9.0.0
+
+# System monitoring
+psutil>=5.8.0,<7.0.0
+
+# Platform-specific optimizations will be handled by hardware_detector.py

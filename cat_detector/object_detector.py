@@ -2,16 +2,23 @@
 
 from typing import Optional, List, Tuple
 from ultralytics import YOLO
+from .hardware_detector import HardwareDetector
 
 
 class ObjectDetector:
-    """YOLO object detection class"""
+    """YOLO object detection class with automatic hardware detection"""
 
     CLASS_NAMES = {0: 'Person', 15: 'Cat'}
     TARGET_CLASS_ID = 15  # Cat
 
-    def __init__(self, model_path: str = 'yolov8x.pt'):
-        # YOLOv8x model optimized for Jetson Xavier NX
+    def __init__(self, model_path: Optional[str] = None):
+        # Auto-detect optimal model if not specified
+        if model_path is None:
+            hardware_detector = HardwareDetector()
+            model_path, requirements_file = hardware_detector.get_optimal_model()
+            print(f"🤖 Auto-detected optimal model: {model_path}")
+            print(f"📋 Using requirements: {requirements_file}")
+        
         self.model = YOLO(model_path)
 
     def detect_objects(self, frame) -> Tuple[List[Tuple[int, float, List[float]]],
