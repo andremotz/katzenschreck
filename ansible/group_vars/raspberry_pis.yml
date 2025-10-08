@@ -1,0 +1,20 @@
+# Katzenschreck Configuration for Raspberry Pi
+rtsp_url: "rtsp://camera.local:554/stream"
+mqtt_broker: "mqtt.local"
+mqtt_topic: "katzenschreck/detections"
+db_host: "database.local"
+db_user: "katzenschreck"
+db_password: "secure_password"
+db_name: "katzenschreck_db"
+
+# System Configuration
+enable_docker: false
+backup_enabled: true
+log_level: "INFO"
+auto_start: true
+
+# Hardware specific settings
+pi_model: "4"  # Will be overridden by host vars
+camera_resolution: "1920x1080"
+detection_confidence: 0.5
+

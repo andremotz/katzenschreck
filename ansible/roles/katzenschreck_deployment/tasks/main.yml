@@ -1,0 +1,47 @@
+---
+- name: Clone katzenschreck repository
+  git:
+    repo: "{{ git_repo }}"
+    dest: "{{ katzenschreck_dir }}"
+    version: main
+    force: yes
+  become_user: "{{ katzenschreck_user }}"
+
+- name: Set proper permissions on katzenschreck directory
+  file:
+    path: "{{ katzenschreck_dir }}"
+    owner: "{{ katzenschreck_user }}"
+    group: "{{ katzenschreck_user }}"
+    recurse: yes
+
+- name: Create config.txt from template
+  template:
+    src: config.txt.j2
+    dest: "{{ katzenschreck_dir }}/{{ config_file }}"
+    owner: "{{ katzenschreck_user }}"
+    group: "{{ katzenschreck_user }}"
+    mode: '0600'
+  notify: restart katzenschreck
+
+- name: Make start_script.sh executable
+  file:
+    path: "{{ katzenschreck_dir }}/start_script.sh"
+    mode: '0755'
+
+- name: Create backup of existing config
+  copy:
+    src: "{{ katzenschreck_dir }}/{{ config_file }}"
+    dest: "{{ katzenschreck_dir }}/{{ config_file }}.backup.{{ ansible_date_time.epoch }}"
+    remote_src: yes
+  when: config_backup | default(true)
+
+- name: Verify deployment
+  command: "{{ katzenschreck_dir }}/venv/bin/python -c 'import sys; sys.path.insert(0, \"{{ katzenschreck_dir }}\"); from cat_detector.main import main'"
+  become_user: "{{ katzenschreck_user }}"
+  register: deployment_verification
+  failed_when: deployment_verification.rc != 0
+
+- name: Display deployment verification result
+  debug:
+    msg: "Deployment verification: {{ 'PASSED' if deployment_verification.rc == 0 else 'FAILED' }}"
+

@@ -1,0 +1,20 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart katzenschreck
+  systemd:
+    name: "{{ service_name }}"
+    state: restarted
+
+- name: stop katzenschreck
+  systemd:
+    name: "{{ service_name }}"
+    state: stopped
+
+- name: start katzenschreck
+  systemd:
+    name: "{{ service_name }}"
+    state: started
+

@@ -1,0 +1,56 @@
+---
+- name: Rollback Katzenschreck System
+  hosts: raspberry_pis
+  become: yes
+  vars:
+    katzenschreck_user: pi
+    katzenschreck_dir: /home/pi/katzenschreck
+    service_name: katzenschreck
+    rollback_commit: "{{ rollback_to_commit | default('HEAD~1') }}"
+
+  tasks:
+    - name: Stop katzenschreck service
+      systemd:
+        name: "{{ service_name }}"
+        state: stopped
+
+    - name: List available backups
+      find:
+        paths: "{{ katzenschreck_dir }}"
+        patterns: "config.txt.backup.*"
+      register: config_backups
+
+    - name: Display available backups
+      debug:
+        msg: "Available config backups: {{ config_backups.files | map(attribute='path') | list }}"
+
+    - name: Restore configuration from backup
+      copy:
+        src: "{{ katzenschreck_dir }}/config.txt.backup.{{ rollback_timestamp | default('latest') }}"
+        dest: "{{ katzenschreck_dir }}/config.txt"
+        remote_src: yes
+      when: rollback_timestamp is defined
+
+    - name: Rollback to specific commit
+      git:
+        repo: "https://github.com/andremotz/katzenschreck.git"
+        dest: "{{ katzenschreck_dir }}"
+        version: "{{ rollback_commit }}"
+        force: yes
+      become_user: "{{ katzenschreck_user }}"
+
+    - name: Verify rollback
+      command: "{{ katzenschreck_dir }}/venv/bin/python -c 'import sys; sys.path.insert(0, \"{{ katzenschreck_dir }}\"); from cat_detector.main import main'"
+      become_user: "{{ katzenschreck_user }}"
+      register: rollback_verification
+      failed_when: rollback_verification.rc != 0
+
+    - name: Start katzenschreck service
+      systemd:
+        name: "{{ service_name }}"
+        state: started
+
+    - name: Display rollback result
+      debug:
+        msg: "Rollback to {{ rollback_commit }} {{ 'SUCCESSFUL' if rollback_verification.rc == 0 else 'FAILED' }}"
+

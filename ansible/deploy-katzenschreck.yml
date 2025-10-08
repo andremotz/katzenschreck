@@ -1,0 +1,16 @@
+---
+- name: Deploy Katzenschreck Cat Detection System
+  hosts: raspberry_pis
+  become: yes
+  vars:
+    katzenschreck_user: pi
+    katzenschreck_dir: /home/pi/katzenschreck
+    config_file: config.txt
+    git_repo: "https://github.com/andremotz/katzenschreck.git"
+    service_name: katzenschreck
+  roles:
+    - system_setup
+    - python_environment
+    - katzenschreck_deployment
+    - service_configuration
+

@@ -1,0 +1,53 @@
+---
+- name: Create systemd service file
+  template:
+    src: katzenschreck.service.j2
+    dest: /etc/systemd/system/{{ service_name }}.service
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart katzenschreck
+
+- name: Enable katzenschreck service
+  systemd:
+    name: "{{ service_name }}"
+    enabled: yes
+    daemon_reload: yes
+  when: auto_start | default(true)
+
+- name: Start katzenschreck service
+  systemd:
+    name: "{{ service_name }}"
+    state: started
+  when: auto_start | default(true)
+
+- name: Create logrotate configuration
+  template:
+    src: katzenschreck.logrotate.j2
+    dest: /etc/logrotate.d/{{ service_name }}
+    mode: '0644'
+
+- name: Create cron job for cleanup
+  cron:
+    name: "Katzenschreck cleanup"
+    job: "{{ katzenschreck_dir }}/venv/bin/python {{ katzenschreck_dir }}/cat_detector/results_cleanup.py"
+    minute: "0"
+    hour: "2"
+    user: "{{ katzenschreck_user }}"
+
+- name: Create health check script
+  template:
+    src: health_check.sh.j2
+    dest: "{{ katzenschreck_dir }}/health_check.sh"
+    mode: '0755'
+    owner: "{{ katzenschreck_user }}"
+    group: "{{ katzenschreck_user }}"
+
+- name: Create monitoring cron job
+  cron:
+    name: "Katzenschreck health check"
+    job: "{{ katzenschreck_dir }}/health_check.sh"
+    minute: "*/5"
+    user: "{{ katzenschreck_user }}"
+  when: enable_monitoring | default(false)
+

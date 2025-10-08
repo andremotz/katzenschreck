@@ -1,0 +1,31 @@
+---
+- name: Create virtual environment
+  command: python3 -m venv {{ katzenschreck_dir }}/venv
+  args:
+    creates: "{{ katzenschreck_dir }}/venv/bin/activate"
+  become_user: "{{ katzenschreck_user }}"
+
+- name: Upgrade pip in virtual environment
+  pip:
+    name: pip
+    state: latest
+    virtualenv: "{{ katzenschreck_dir }}/venv"
+    virtualenv_python: python3
+
+- name: Install Python requirements
+  pip:
+    requirements: "{{ katzenschreck_dir }}/cat_detector/requirements.txt"
+    virtualenv: "{{ katzenschreck_dir }}/venv"
+    virtualenv_python: python3
+  become_user: "{{ katzenschreck_user }}"
+
+- name: Verify Python environment
+  command: "{{ katzenschreck_dir }}/venv/bin/python -c 'import cv2, ultralytics, mysql.connector, paho.mqtt.client'"
+  become_user: "{{ katzenschreck_user }}"
+  register: python_verification
+  failed_when: python_verification.rc != 0
+
+- name: Display verification result
+  debug:
+    msg: "Python environment verification: {{ 'PASSED' if python_verification.rc == 0 else 'FAILED' }}"
+

@@ -1,0 +1,62 @@
+---
+- name: Update Katzenschreck System
+  hosts: raspberry_pis
+  become: yes
+  serial: 1  # Rolling update, one host at a time
+  vars:
+    katzenschreck_user: pi
+    katzenschreck_dir: /home/pi/katzenschreck
+    service_name: katzenschreck
+
+  tasks:
+    - name: Stop katzenschreck service
+      systemd:
+        name: "{{ service_name }}"
+        state: stopped
+
+    - name: Backup current configuration
+      copy:
+        src: "{{ katzenschreck_dir }}/config.txt"
+        dest: "{{ katzenschreck_dir }}/config.txt.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+
+    - name: Pull latest changes
+      git:
+        repo: "https://github.com/andremotz/katzenschreck.git"
+        dest: "{{ katzenschreck_dir }}"
+        version: main
+        force: yes
+      become_user: "{{ katzenschreck_user }}"
+
+    - name: Update Python requirements
+      pip:
+        requirements: "{{ katzenschreck_dir }}/cat_detector/requirements.txt"
+        virtualenv: "{{ katzenschreck_dir }}/venv"
+        virtualenv_python: python3
+      become_user: "{{ katzenschreck_user }}"
+
+    - name: Verify deployment
+      command: "{{ katzenschreck_dir }}/venv/bin/python -c 'import sys; sys.path.insert(0, \"{{ katzenschreck_dir }}\"); from cat_detector.main import main'"
+      become_user: "{{ katzenschreck_user }}"
+      register: update_verification
+      failed_when: update_verification.rc != 0
+
+    - name: Start katzenschreck service
+      systemd:
+        name: "{{ service_name }}"
+        state: started
+
+    - name: Wait for service to be ready
+      wait_for:
+        timeout: 30
+      when: update_verification.rc == 0
+
+    - name: Verify service is running
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+
+    - name: Display update result
+      debug:
+        msg: "Update {{ 'SUCCESSFUL' if service_status.status.ActiveState == 'active' else 'FAILED' }}"
+

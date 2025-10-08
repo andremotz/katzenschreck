@@ -1,0 +1,23 @@
+{{ katzenschreck_dir }}/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 644 {{ katzenschreck_user }} {{ katzenschreck_user }}
+    postrotate
+        systemctl reload {{ service_name }} > /dev/null 2>&1 || true
+    endscript
+}
+
+{{ katzenschreck_dir }}/results/*.jpg {
+    weekly
+    missingok
+    rotate 12
+    compress
+    delaycompress
+    notifempty
+    create 644 {{ katzenschreck_user }} {{ katzenschreck_user }}
+}
+

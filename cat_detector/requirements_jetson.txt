@@ -1,0 +1,29 @@
+# Requirements optimized for NVIDIA Jetson Xavier NX with Python 3.8.10
+# Core dependencies
+numpy==1.21.6
+opencv-python==4.5.5.64
+pillow==8.4.0
+
+# YOLOv8 and ultralytics (compatible with Jetson)
+ultralytics==8.0.196
+torch==1.13.1
+torchvision==0.14.1
+
+# Additional dependencies for YOLO
+matplotlib==3.5.3
+pandas==1.5.3
+pyyaml==6.0
+tqdm==4.64.1
+requests==2.28.2
+scipy==1.9.3
+
+# MQTT and Database
+paho-mqtt==1.6.1
+mysql-connector-python==8.0.33
+
+# System monitoring
+psutil==5.9.5
+
+# Jetson-specific optimizations
+# Note: Install PyTorch with CUDA support for Jetson:
+# pip3 install torch==1.13.1 torchvision==0.14.1 --index-url https://download.pytorch.org/whl/cu117

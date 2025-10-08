@@ -1,0 +1,67 @@
+---
+- name: Validate Katzenschreck Deployment
+  hosts: raspberry_pis
+  become: yes
+  vars:
+    katzenschreck_user: pi
+    katzenschreck_dir: /home/pi/katzenschreck
+    service_name: katzenschreck
+
+  tasks:
+    - name: Check if service is running
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+
+    - name: Check Python process
+      shell: pgrep -f "cat_detector.main"
+      register: python_process
+      failed_when: false
+
+    - name: Check disk space
+      shell: df {{ katzenschreck_dir }} | awk 'NR==2 {print $5}' | sed 's/%//'
+      register: disk_usage
+
+    - name: Check if results directory is writable
+      stat:
+        path: "{{ katzenschreck_dir }}/results"
+      register: results_dir
+
+    - name: Check configuration file
+      stat:
+        path: "{{ katzenschreck_dir }}/config.txt"
+      register: config_file
+
+    - name: Test Python imports
+      command: "{{ katzenschreck_dir }}/venv/bin/python -c 'import cv2, ultralytics, mysql.connector, paho.mqtt.client'"
+      become_user: "{{ katzenschreck_user }}"
+      register: import_test
+      failed_when: false
+
+    - name: Check log files
+      find:
+        paths: "{{ katzenschreck_dir }}/logs"
+        patterns: "*.log"
+      register: log_files
+
+    - name: Display validation results
+      debug:
+        msg: |
+          Service Status: {{ 'RUNNING' if service_status.status.ActiveState == 'active' else 'STOPPED' }}
+          Python Process: {{ 'FOUND' if python_process.rc == 0 else 'NOT FOUND' }}
+          Disk Usage: {{ disk_usage.stdout }}%
+          Results Directory: {{ 'WRITABLE' if results_dir.stat.writable else 'NOT WRITABLE' }}
+          Config File: {{ 'EXISTS' if config_file.stat.exists else 'MISSING' }}
+          Python Imports: {{ 'SUCCESS' if import_test.rc == 0 else 'FAILED' }}
+          Log Files: {{ log_files.files | length }} found
+
+    - name: Fail if critical checks fail
+      fail:
+        msg: "Validation failed - check the results above"
+      when: >
+        service_status.status.ActiveState != 'active' or
+        python_process.rc != 0 or
+        not results_dir.stat.writable or
+        not config_file.stat.exists or
+        import_test.rc != 0
+
