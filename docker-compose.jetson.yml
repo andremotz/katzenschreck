@@ -1,4 +1,4 @@
-version: '3.3'
+version: '2.3'
 
 services:
   katzenschreck:
@@ -8,7 +8,7 @@ services:
     container_name: katzenschreck
     restart: unless-stopped
     
-    # GPU support for Jetson
+    # GPU support for Jetson (version 2.3 syntax)
     runtime: nvidia
     
     # Environment variables
