@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 
 services:
   katzenschreck:
@@ -23,13 +23,4 @@ services:
     
     # Network mode for RTSP streams
     network_mode: host
-    
-    # Resource limits (adjust as needed)
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
