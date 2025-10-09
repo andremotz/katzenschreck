@@ -11,10 +11,10 @@ class ObjectDetector:
     CLASS_NAMES = {0: 'Person', 15: 'Cat'}
     TARGET_CLASS_ID = 15  # Cat
 
-    def __init__(self, model_path: Optional[str] = None):
+    def __init__(self, model_path: Optional[str] = None, hardware_type: Optional[str] = None):
         # Auto-detect optimal model if not specified
         if model_path is None:
-            hardware_detector = HardwareDetector()
+            hardware_detector = HardwareDetector(forced_type=hardware_type)
             model_path, requirements_file = hardware_detector.get_optimal_model()
             print(f"🤖 Auto-detected optimal model: {model_path}")
             print(f"📋 Using requirements: {requirements_file}")

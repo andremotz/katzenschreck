@@ -21,7 +21,7 @@ class StreamProcessor:  # pylint: disable=too-few-public-methods
     def __init__(self, config: Config, output_dir: str):
         self.config = config
         self.output_dir = output_dir
-        self.detector = ObjectDetector()
+        self.detector = ObjectDetector(hardware_type=config.hardware_type)
         self.mqtt_handler = MQTTHandler(config)
         self.db_handler = DatabaseHandler(config)
 

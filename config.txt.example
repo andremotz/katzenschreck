@@ -24,3 +24,7 @@ db_user=<katzenschreck_app>
 db_password=<123>
 db_database=katzenschreck
 camera_name=cam_teich
+
+# Hardware Type Override (optional) - Use when automatic detection fails (e.g., in Docker containers)
+# Valid values: jetson, raspberry_pi, generic
+# hardware_type=jetson

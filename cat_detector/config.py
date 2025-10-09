@@ -44,6 +44,9 @@ class Config:  # pylint: disable=too-few-public-methods,too-many-instance-attrib
         else:
             self.ignore_zone = None
 
+        # Hardware type override (optional: jetson, raspberry_pi, generic)
+        self.hardware_type = config.get('hardware_type')
+
     def _validate_config(self):
         """Validates the configuration"""
         required_fields = [

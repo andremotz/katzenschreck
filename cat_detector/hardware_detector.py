@@ -9,10 +9,25 @@ from typing import Tuple, Optional
 class HardwareDetector:
     """Detects hardware platform and suggests optimal YOLO model"""
     
-    def __init__(self):
+    def __init__(self, forced_type: Optional[str] = None):
+        """
+        Initialize hardware detector
+        
+        Args:
+            forced_type: Optional hardware type override ('jetson', 'raspberry_pi', 'generic')
+        """
         self.platform = self._detect_platform()
-        self.is_jetson = self._is_jetson_device()
-        self.is_raspberry_pi = self._is_raspberry_pi()
+        
+        if forced_type:
+            # Use forced hardware type instead of auto-detection
+            self.is_jetson = forced_type.lower() == 'jetson'
+            self.is_raspberry_pi = forced_type.lower() == 'raspberry_pi'
+            print(f"🔧 Hardware type forced to: {forced_type}")
+        else:
+            # Auto-detect hardware
+            self.is_jetson = self._is_jetson_device()
+            self.is_raspberry_pi = self._is_raspberry_pi()
+        
         self.memory_gb = self._get_memory_gb()
         self.cpu_cores = self._get_cpu_cores()
     
