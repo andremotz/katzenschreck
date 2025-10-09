@@ -16,8 +16,18 @@ class KatzenschreckApp:  # pylint: disable=too-few-public-methods
 
     def __init__(self):
         self.args = self._parse_arguments()
-        self.config = Config('../config.txt')
+        config_path = self._get_config_path()
+        self.config = Config(config_path)
         self.processor = StreamProcessor(self.config, self.args.output_dir)
+
+    def _get_config_path(self):
+        """Determines the correct config.txt path (Docker or local)"""
+        # Check if running in Docker container
+        docker_config_path = '/app/config.txt'
+        if os.path.exists(docker_config_path):
+            return docker_config_path
+        # Default to local path
+        return '../config.txt'
 
     def _parse_arguments(self):
         """Parses command line arguments"""
