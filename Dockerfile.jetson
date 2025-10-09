@@ -6,9 +6,15 @@ FROM ultralytics/ultralytics:latest-jetson
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including FFmpeg libraries for OpenCV
 RUN apt-get update && apt-get install -y \
     git \
+    ffmpeg \
+    libavcodec58 \
+    libavformat58 \
+    libavutil56 \
+    libswscale5 \
+    libswresample3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
