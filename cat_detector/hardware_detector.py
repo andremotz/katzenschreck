@@ -94,12 +94,8 @@ class HardwareDetector:
             Tuple of (model_name, requirements_file)
         """
         if self.is_jetson:
-            if self.memory_gb >= 8:
-                return 'yolo11x.pt', 'requirements_jetson.txt'
-            elif self.memory_gb >= 4:
-                return 'yolo11l.pt', 'requirements_jetson.txt'
-            else:
-                return 'yolo11m.pt', 'requirements_jetson.txt'
+            # Jetson always uses yolo11x for best performance
+            return 'yolo11x.pt', 'requirements_jetson.txt'
         
         elif self.is_raspberry_pi:
             if self.memory_gb >= 8:

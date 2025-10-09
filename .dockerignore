@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+venv/
+env/
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Results and logs
+results/
+*.log
+
+# Config (will be mounted)
+config.txt
+
+# Documentation
+*.md
+README*
+
+# Ansible
+ansible/
+
+# Photos
+photos/
+
+# Other
+.DS_Store
+

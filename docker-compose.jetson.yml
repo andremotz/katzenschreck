@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  katzenschreck:
+    build:
+      context: .
+      dockerfile: Dockerfile.jetson
+    container_name: katzenschreck
+    restart: unless-stopped
+    
+    # GPU support for Jetson
+    runtime: nvidia
+    
+    # Environment variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    
+    # Mount config and results
+    volumes:
+      - ./config.txt:/app/config.txt:ro
+      - ./results:/app/results
+    
+    # Network mode for RTSP streams
+    network_mode: host
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+

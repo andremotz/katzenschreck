@@ -1,0 +1,36 @@
+# Dockerfile for Katzenschreck on NVIDIA Jetson
+# Based on ultralytics/ultralytics with additional dependencies
+
+FROM ultralytics/ultralytics:latest-jetson
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY cat_detector/requirements_jetson.txt /app/requirements_jetson.txt
+
+# Install Python dependencies
+# Note: PyTorch and ultralytics are already included in the base image
+RUN pip install --no-cache-dir \
+    paho-mqtt==1.6.1 \
+    mysql-connector-python==8.0.33 \
+    psutil==5.9.5
+
+# Copy application code
+COPY cat_detector/ /app/cat_detector/
+COPY config.txt.example /app/config.txt.example
+
+# Create results directory
+RUN mkdir -p /app/results
+
+# Set environment variable for hardware type
+ENV PYTHONUNBUFFERED=1
+
+# Default command (can be overridden)
+CMD ["python3", "-m", "cat_detector.main", "/app/results"]
+
