@@ -80,28 +80,28 @@ class HardwareDetector:
         """
         if self.is_jetson:
             if self.memory_gb >= 8:
-                return 'yolov8x.pt', 'requirements_jetson.txt'
+                return 'yolo11x.pt', 'requirements_jetson.txt'
             elif self.memory_gb >= 4:
-                return 'yolov8l.pt', 'requirements_jetson.txt'
+                return 'yolo11l.pt', 'requirements_jetson.txt'
             else:
-                return 'yolov8m.pt', 'requirements_jetson.txt'
+                return 'yolo11m.pt', 'requirements_jetson.txt'
         
         elif self.is_raspberry_pi:
             if self.memory_gb >= 8:
-                return 'yolo12x.pt', 'requirements.txt'
+                return 'yolo11x.pt', 'requirements.txt'
             elif self.memory_gb >= 4:
-                return 'yolo12l.pt', 'requirements.txt'
+                return 'yolo11l.pt', 'requirements.txt'
             else:
-                return 'yolo12m.pt', 'requirements.txt'
+                return 'yolo11m.pt', 'requirements.txt'
         
         else:
             # Default for other platforms (e.g., desktop)
             if self.memory_gb >= 16:
-                return 'yolov8x.pt', 'requirements.txt'
+                return 'yolo11x.pt', 'requirements.txt'
             elif self.memory_gb >= 8:
-                return 'yolov8l.pt', 'requirements.txt'
+                return 'yolo11l.pt', 'requirements.txt'
             else:
-                return 'yolov8m.pt', 'requirements.txt'
+                return 'yolo11m.pt', 'requirements.txt'
     
     def get_hardware_info(self) -> dict:
         """Get detailed hardware information"""
