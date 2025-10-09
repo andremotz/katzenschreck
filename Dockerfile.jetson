@@ -21,11 +21,10 @@ RUN apt-get update && apt-get install -y \
 COPY cat_detector/requirements_jetson.txt /app/requirements_jetson.txt
 
 # Install Python dependencies
-# Note: PyTorch and ultralytics are already included in the base image
-# Install all other requirements except torch/torchvision/ultralytics
+# Note: PyTorch, ultralytics, and opencv are already included in the base image
+# Install all other requirements except torch/torchvision/ultralytics/opencv
 RUN pip install --no-cache-dir \
     numpy==1.21.6 \
-    opencv-python==4.5.5.64 \
     pillow==8.4.0 \
     matplotlib==3.5.3 \
     pandas==1.5.3 \
