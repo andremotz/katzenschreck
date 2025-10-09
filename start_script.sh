@@ -38,7 +38,19 @@ source $VENV_DIR/bin/activate
 echo "🔍 Detecting hardware platform..."
 python3 -c "
 from hardware_detector import HardwareDetector
-detector = HardwareDetector()
+from config import Config
+
+# Load config to check for hardware_type override
+try:
+    config = Config('../config.txt')
+    hardware_type = config.hardware_type
+    if hardware_type:
+        print(f'Using hardware_type from config: {hardware_type}')
+except:
+    hardware_type = None
+    print('No hardware_type override found in config')
+
+detector = HardwareDetector(forced_type=hardware_type)
 detector.print_hardware_info()
 model_name, requirements_file = detector.get_optimal_model()
 print(f'Using requirements: {requirements_file}')
